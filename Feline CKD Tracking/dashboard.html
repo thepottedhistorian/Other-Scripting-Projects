@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zöe's Clinical Dashboard & Protocol</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+      margin: 0;
+      padding: 20px;
+    }
+    .dashboard-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .main-grid {
+      display: grid;
+      grid-template-columns: 40% 60%;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      margin-bottom: 20px;
+    }
+    .filter-btn {
+      background-color: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #475569;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn.active {
+      background-color: #0d9488;
+      border-color: #0d9488;
+      color: #ffffff;
+    }
+    .chart-container {
+      position: relative;
+      height: 240px;
+      width: 100%;
+    }
+    .btn-toggle-history {
+      background-color: #0f172a;
+      color: #ffffff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-toggle-history:hover {
+      background-color: #334155;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="dashboard-container">
+    <div class="main-grid">
+      
+      <!-- LEFT COLUMN: CLINICAL VITALS, DARBEPOETIN STATUS & CHARTS (40%) -->
+      <div class="left-column">
+        
+        <!-- DARBEPOETIN STATUS CARD -->
+        <div class="card" style="margin-bottom: 16px; padding: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="margin: 0; font-size: 15px; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+              <span>💉</span> Darbepoetin Status
+            </h3>
+            <span id="darbo-badge" style="background-color: #ccfbf1; color: #0f766e; font-weight: bold; font-size: 11px; padding: 3px 8px; border-radius: 12px; border: 1px solid #99f6e4;">
+              21-Day Cycle
+            </span>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; background: #f8fafc; padding: 10px; border-radius: 6px; border: 1px solid #f1f5f9;">
+            <div>
+              <div style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Cycle Day</div>
+              <div id="darbo-cycle-day" style="font-size: 16px; font-weight: bold; color: #0f172a; margin-top: 2px;">--</div>
+            </div>
+            <div>
+              <div style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Next Dose</div>
+              <div id="darbo-next-date" style="font-size: 13px; font-weight: bold; color: #0284c7; margin-top: 4px;">--</div>
+            </div>
+            <div>
+              <div style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Total Doses</div>
+              <div id="darbo-total-doses" style="font-size: 16px; font-weight: bold; color: #0f172a; margin-top: 2px;">--</div>
+            </div>
+          </div>
+          
+          <div style="margin-top: 8px; font-size: 11px; color: #64748b; text-align: right;">
+            Last Logged: <span id="darbo-last-logged" style="font-weight: 600; color: #334155;">--</span>
+          </div>
+        </div>
+
+        <!-- CLINICAL VITALS CARD -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+            <h2 style="color: #0f172a; font-size: 18px; margin: 0;">Clinical Vitals</h2>
+            <div style="display: flex; gap: 4px;">
+              <button class="filter-btn" onclick="fetchChartData(7, this)">7D</button>
+              <button class="filter-btn" onclick="fetchChartData(14, this)">14D</button>
+              <button class="filter-btn active" onclick="fetchChartData(30, this)">30D</button>
+              <button class="filter-btn" onclick="fetchChartData(90, this)">90D</button>
+              <button class="filter-btn" onclick="fetchChartData('all', this)">All</button>
+            </div>
+          </div>
+
+          <!-- Weight Chart Card -->
+          <div style="margin-bottom: 20px;">
+            <h3 style="margin-top: 0; color: #334155; font-size: 14px; margin-bottom: 8px;">Weight Tracking (lbs)</h3>
+            <div class="chart-container">
+              <canvas id="weightChart"></canvas>
+            </div>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+
+          <!-- Fluid Intake Chart Card -->
+          <div style="margin-bottom: 20px;">
+            <h3 style="margin-top: 0; color: #334155; font-size: 14px; margin-bottom: 8px;">Fluid Intake Breakdown (mL)</h3>
+            <div class="chart-container">
+              <canvas id="fluidsChart"></canvas>
+            </div>
+          </div>
+
+          <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+
+          <!-- Litter Box Visits Chart Card -->
+          <div>
+            <h3 style="margin-top: 0; color: #334155; font-size: 14px; margin-bottom: 8px;">Litter Box Visits (Frequency/Day)</h3>
+            <div class="chart-container">
+              <canvas id="litterBoxChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+      </div> <!-- END LEFT COLUMN -->
+
+      <!-- RIGHT COLUMN: PROTOCOL DATA (60%) -->
+      <div class="right-column">
+        
+        <!-- ACTIVE PROTOCOL CARD -->
+        <div class="card" style="border-left: 5px solid #0d9488;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+            <h2 style="margin: 0; color: #0f172a; font-size: 20px;">Current Protocol</h2>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span id="protocol-active-date" style="background-color: #ccfbf1; color: #115e59; font-weight: bold; font-size: 12px; padding: 4px 10px; border-radius: 12px; border: 1px solid #99f6e4;">Loading...</span>
+              <button class="btn-toggle-history" onclick="toggleHistorySection()">Show Previous Protocols</button>
+            </div>
+          </div>
+          <p id="protocol-vet" style="margin-top: 0; margin-bottom: 15px; color: #475569; font-style: italic; font-size: 13px;"></p>
+
+          <h3 style="color: #1e293b; font-size: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 0;">Medications & Care:</h3>
+          <ul id="protocol-meds-list" style="padding-left: 20px; color: #334155; line-height: 1.6;"></ul>
+        </div>
+
+        <!-- PREVIOUS PROTOCOLS SECTION (COLLAPSABLE) -->
+        <div id="history-section" style="display: none; margin-top: 20px;">
+          <h3 style="color: #475569; font-size: 16px; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px;">Protocol History</h3>
+          <div id="protocol-history-list"></div>
+        </div>
+
+      </div> <!-- END RIGHT COLUMN -->
+
+    </div>
+  </div>
+
+  <script>
+    let weightChartInstance = null;
+    let fluidsChartInstance = null;
+    let litterBoxChartInstance = null;
+    let historyVisible = false;
+
+    window.onload = function() {
+      fetchChartData(30);
+      fetchProtocolData();
+    };
+
+    function updateDarbepoetinWidget(darbo) {
+      if (!darbo) return;
+      
+      const badgeEl = document.getElementById('darbo-badge');
+      const cycleDayEl = document.getElementById('darbo-cycle-day');
+      const nextDateEl = document.getElementById('darbo-next-date');
+      const totalDosesEl = document.getElementById('darbo-total-doses');
+      const lastLoggedEl = document.getElementById('darbo-last-logged');
+
+      if (badgeEl) badgeEl.innerText = darbo.phase || "21-Day Cycle";
+      if (cycleDayEl) cycleDayEl.innerText = "Day " + darbo.currentDay + " of " + darbo.totalDays;
+      if (nextDateEl) nextDateEl.innerText = darbo.nextDoseDate || "Nov 23, 2026";
+      if (totalDosesEl) totalDosesEl.innerText = darbo.totalDosesGiven || "6";
+      if (lastLoggedEl) lastLoggedEl.innerText = darbo.lastDoseLogged || "Oct 28, 2026";
+    }
+
+    function toggleHistorySection() {
+      historyVisible = !historyVisible;
+      const sec = document.getElementById('history-section');
+      const btn = document.querySelector('.btn-toggle-history');
+      if (sec && btn) {
+        sec.style.display = historyVisible ? 'block' : 'none';
+        btn.innerText = historyVisible ? 'Hide Previous Protocols' : 'Show Previous Protocols';
+      }
+    }
+
+    function fetchChartData(days, btnElement) {
+      if (btnElement) {
+        const buttons = document.querySelectorAll('.filter-btn');
+        buttons.forEach(b => b.classList.remove('active'));
+        btnElement.classList.add('active');
+      }
+
+      google.script.run.withSuccessHandler(function(data) {
+        if (!data) return;
+
+        if (data.darbepoetin) {
+          updateDarbepoetinWidget(data.darbepoetin);
+        }
+
+        renderWeightChart(data.labels, data.weights);
+        renderFluidsChart(data.labels, data.subQ, data.slurry, data.fountain);
+        renderLitterBoxChart(data.labels, data.litterBoxTrips);
+      }).getDashboardData(days);
+    }
+
+    function fetchProtocolData() {
+      google.script.run.withSuccessHandler(function(proto) {
+        if (!proto || !proto.active) return;
+        
+        document.getElementById('protocol-active-date').innerText = "Active: " + proto.active.date;
+        document.getElementById('protocol-vet').innerText = "Per prescribing vet: " + proto.active.vet;
+
+        const listEl = document.getElementById('protocol-meds-list');
+        listEl.innerHTML = '';
+        proto.active.medications.forEach(med => {
+          const li = document.createElement('li');
+          li.style.marginBottom = "8px";
+          li.innerHTML = med;
+          listEl.appendChild(li);
+        });
+
+        // Render History Items
+        const historyContainer = document.getElementById('protocol-history-list');
+        if (historyContainer && proto.history) {
+          historyContainer.innerHTML = '';
+          proto.history.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.borderLeft = '4px solid #cbd5e1';
+            card.style.marginBottom = '16px';
+            
+            let html = '<h4 style="margin: 0 0 4px 0; color: #1e293b; font-size: 15px;">' + item.date + '</h4>';
+            html += '<p style="margin: 0 0 10px 0; font-style: italic; color: #64748b; font-size: 12px;">Per vet: ' + item.vet + '</p>';
+            html += '<ul style="padding-left: 18px; margin: 0; color: #475569; line-height: 1.5; font-size: 13px;">';
+            item.items.forEach(liText => {
+              html += '<li style="margin-bottom: 4px;">' + liText + '</li>';
+            });
+            html += '</ul>';
+            
+            card.innerHTML = html;
+            historyContainer.appendChild(card);
+          });
+        }
+      }).getProtocolData();
+    }
+
+    function renderWeightChart(labels, weights) {
+      const ctx = document.getElementById('weightChart').getContext('2d');
+      if (weightChartInstance) weightChartInstance.destroy();
+
+      weightChartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Weight (lbs)',
+            data: weights,
+            borderColor: '#2563eb',
+            backgroundColor: 'rgba(37, 99, 235, 0.08)',
+            borderWidth: 2.5,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            pointBackgroundColor: '#2563eb',
+            fill: true,
+            spanGaps: true,
+            tension: 0.25
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 11 } } }
+          },
+          scales: {
+            x: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+            y: { min: 9.0, max: 10.5, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    function renderFluidsChart(labels, subQ, slurry, fountain) {
+      const ctx = document.getElementById('fluidsChart').getContext('2d');
+      if (fluidsChartInstance) fluidsChartInstance.destroy();
+
+      fluidsChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Sub-Q (mL)', data: subQ, backgroundColor: '#0d9488', borderRadius: 3 },
+            { label: 'Slurry (mL)', data: slurry, backgroundColor: '#f59e0b', borderRadius: 3 },
+            { label: 'Fountain (mL)', data: fountain, backgroundColor: '#3b82f6', borderRadius: 3 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 11 } } }
+          },
+          scales: {
+            x: { stacked: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+            y: { stacked: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+    }
+
+    function renderLitterBoxChart(labels, trips) {
+      const ctx = document.getElementById('litterBoxChart').getContext('2d');
+      if (litterBoxChartInstance) litterBoxChartInstance.destroy();
+
+      litterBoxChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Visits Count',
+            data: trips,
+            backgroundColor: '#8b5cf6',
+            borderRadius: 4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, position: 'top', labels: { boxWidth: 12, font: { size: 11 } } }
+          },
+          scales: {
+            x: { grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+            y: { beginAtZero: true, stepSize: 1, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } }
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>
