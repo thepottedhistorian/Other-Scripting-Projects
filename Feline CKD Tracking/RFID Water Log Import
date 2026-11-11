@@ -1,0 +1,152 @@
+/**
+ * PROJECT: Zöe's Daily Care Tracker - Water Log Automation
+ * PURPOSE: Imports water intake from Gmail, logs granularly, and updates Tracking.
+ * VERSION: 5.1 (Restored Subtraction Operators & Aligned Column D / Row 7)
+ */
+
+const CONFIG = {
+  LABEL_NAME: "Zoes Logs/Fountain_Data",
+  TRACKING_SHEET: "Tracking",
+  WATER_LOG_SHEET: "Water Log",
+  FOUNTAIN_COL_TRACKING: 4,  // Column D: Fountain (ml)
+  LOG_START_ROW: 7,          
+  COLORS: ["#f3f3f3", "#ffffff"] 
+};
+
+function importFountainData() {
+  const label = GmailApp.getUserLabelByName(CONFIG.LABEL_NAME);
+  if (!label) return;
+
+  const threads = label.getThreads(0, 20).filter(t => t.isUnread());
+  if (threads.length === 0) {
+    refreshWaterLogFormatting();
+    return;
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const trackingSheet = ss.getSheetByName(CONFIG.TRACKING_SHEET);
+  const logSheet = ss.getSheetByName(CONFIG.WATER_LOG_SHEET);
+
+  threads.forEach(thread => {
+    thread.getMessages().forEach(msg => {
+      if (msg.isUnread()) {
+        const msgDate = msg.getDate();
+        const dateStr = Utilities.formatDate(msgDate, ss.getSpreadsheetTimeZone(), "MM/dd/yyyy");
+        const timeStr = Utilities.formatDate(msgDate, ss.getSpreadsheetTimeZone(), "HH:mm:ss");
+        const content = msg.getSubject() + " " + msg.getPlainBody();
+        const mlMatch = content.match(/(\d+(\.\d+)?)\s*ml/i);
+        
+        if (mlMatch) {
+          const newMl = parseFloat(mlMatch[1]);
+          updateTrackingTotal(trackingSheet, msgDate, newMl);
+          
+          // Insert row at top of data area (Row 7) on Water Log tab
+          logSheet.insertRowBefore(CONFIG.LOG_START_ROW);
+          logSheet.getRange(CONFIG.LOG_START_ROW, 1, 1, 3).setValues([[dateStr, timeStr, newMl]]);
+        }
+        msg.markRead();
+      }
+    });
+  });
+
+  refreshWaterLogFormatting();
+}
+
+/**
+ * SAFELY UPDATES FOUNTAIN WATER WITHOUT INSERTING ROGUE ROWS
+ */
+function updateTrackingTotal(sheet, msgDate, amount) {
+  if (!sheet) return;
+
+  let row = findTrackingRowForDate(sheet, msgDate);
+
+  // If date row does not exist yet, trigger addMidnightRow to create standard structure
+  if (row === -1) {
+    addMidnightRow();
+    row = findTrackingRowForDate(sheet, msgDate);
+  }
+
+  if (row > 0) {
+    let cell = sheet.getRange(row, CONFIG.FOUNTAIN_COL_TRACKING);
+    cell.setValue((parseFloat(cell.getValue()) || 0) + amount);
+    Logger.log("Added water intake (" + amount + " ml) to Row " + row);
+  }
+}
+
+function refreshWaterLogFormatting() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG.WATER_LOG_SHEET);
+  if (!sheet) return;
+
+  const lastRow = sheet.getLastRow();
+  const startRow = CONFIG.LOG_START_ROW;
+  if (lastRow < startRow) return;
+  
+  const range = sheet.getRange(startRow, 1, (lastRow - startRow) + 1, 4);
+  const data = range.getValues();
+  
+  sheet.getRange(startRow, 4, (lastRow - startRow) + 1, 1).clearContent().setFontWeight("normal");
+  range.setBackground(null);
+
+  let colorIndex = 0;
+  let currentGroupDate = data[0][0] ? data[0][0].toString() : "";
+  let dailySum = 0;
+  let groupStartRow = 0;
+
+  for (let i = 0; i < data.length; i++) {
+    const rowDate = data[i][0] ? data[i][0].toString() : "";
+    
+    if (rowDate === currentGroupDate) {
+      dailySum += parseFloat(data[i][2]) || 0;
+    } else {
+      finalizeDateGroup(sheet, startRow, groupStartRow, i - groupStartRow, dailySum, colorIndex);
+      colorIndex++;
+      groupStartRow = i;
+      currentGroupDate = rowDate;
+      dailySum = parseFloat(data[i][2]) || 0;
+    }
+    
+    if (i === data.length - 1) {
+      finalizeDateGroup(sheet, startRow, groupStartRow, (i - groupStartRow) + 1, dailySum, colorIndex);
+    }
+  }
+}
+
+function finalizeDateGroup(sheet, startRow, groupStartRow, numRows, sum, colorIndex) {
+  const totalCell = sheet.getRange(startRow + groupStartRow, 4);
+  totalCell.setValue(sum.toFixed(1)).setFontWeight("bold");
+  sheet.getRange(startRow + groupStartRow, 1, numRows, 4).setBackground(CONFIG.COLORS[colorIndex % 2]);
+}
+
+function manuallyRefreshExistingData() {
+  refreshWaterLogFormatting();
+}
+
+/**
+ * ROBUST DATE FINDER
+ * Scans Column A of 'Tracking' to find the exact row matching targetDate.
+ * Compares Year, Month, and Day natively without relying on string formatting.
+ */
+function findTrackingRowForDate(sheet, targetDate) {
+  const topTargetRow = 7;
+  const lastRow = sheet.getLastRow();
+  if (lastRow < topTargetRow) return -1;
+
+  const t = new Date(targetDate);
+  const targetY = t.getFullYear();
+  const targetM = t.getMonth();
+  const targetD = t.getDate();
+
+  const values = sheet.getRange(topTargetRow, 1, (lastRow - topTargetRow) + 1, 1).getValues();
+  for (let i = 0; i < values.length; i++) {
+    const cell = values[i][0];
+    if (cell) {
+      const d = new Date(cell);
+      if (!isNaN(d.getTime())) {
+        if (d.getFullYear() === targetY && d.getMonth() === targetM && d.getDate() === targetD) {
+          return topTargetRow + i;
+        }
+      }
+    }
+  }
+  return -1;
+}
