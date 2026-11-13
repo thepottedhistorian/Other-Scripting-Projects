@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; color: #333; }
+      h3 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+      table { border-collapse: collapse; width: 100%; background: white; }
+      th, td { border: 1px solid #dfe6e9; padding: 10px; font-size: 13px; text-align: left; }
+      th { background: #f8f9fa; font-weight: bold; position: sticky; top: 0; z-index: 10; }
+      
+      /* Row Highlighting: Red for errors, Green for calculated */
+      .bad { background-color: #fff5f5; color: #c0392b; }
+      .ok { background-color: #f8fff9; }
+      tr:hover { background-color: #f1f2f6; }
+
+      .scroll { 
+        max-height: 600px; 
+        overflow-y: auto; 
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        margin-bottom: 20px;
+      }
+
+      /* Buttons */
+      .btn-container { display: flex; gap: 10px; }
+      button { 
+        padding: 10px 20px; 
+        border: none; 
+        border-radius: 4px; 
+        cursor: pointer; 
+        font-weight: bold;
+        transition: opacity 0.2s;
+      }
+      .btn-apply { background: #27ae60; color: white; }
+      .btn-cancel { background: #95a5a6; color: white; }
+      button:hover { opacity: 0.8; }
+    </style>
+  </head>
+  <body>
+    <h3>Repot Date Preview</h3>
+    <p>Review the calculated dates before applying them to the Maintenance Log and Orchid Sheets.</p>
+
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Row</th>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Acquisition</th>
+            <th>Last Repot</th>
+            <th>Base Used</th>
+            <th>Frequency</th>
+            <th>Months</th>
+            <th>Next Repot</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <? for (let row of previewData) { ?>
+            <tr class="<?= row.status === 'OK' ? 'ok' : 'bad' ?>">
+              <td><?= row.row ?></td>
+              <td><?= row.id ?></td>
+              <td><strong><?= row.name ?></strong></td>
+              <td><?= row.acquisition ?></td>
+              <td><?= row.lastRepot ?></td>
+              <td><em><?= row.baseUsed ?></em></td>
+              <td><?= row.frequency ?></td>
+              <td><?= row.months ?></td>
+              <td><strong><?= row.next ?></strong></td>
+              <td><?= row.status ?></td>
+            </tr>
+          <? } ?>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="btn-container">
+      <button class="btn-apply" onclick="applyChanges()">Apply Changes</button>
+      <button class="btn-cancel" onclick="google.script.host.close()">Cancel</button>
+    </div>
+
+<script>
+  function applyChanges() {
+    const btn = document.querySelector('.btn-apply');
+    btn.innerHTML = 'Updating Collection...';
+    btn.disabled = true;
+
+    google.script.run
+      .withSuccessHandler(() => {
+        google.script.host.close();
+      })
+      .withFailureHandler((err) => {
+        alert("Execution Error: " + err.message);
+        btn.innerHTML = 'Apply Changes';
+        btn.disabled = false;
+      })
+      .recalcAllPlantRepotDueDates();
+  }
+</script>
+  </body>
+</html>
