@@ -1,0 +1,2208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Jenny's Potted Ledger – Botanical Archivist</title>
+  <style>
+    :root {
+      --bg-window: #0b1118;
+      --bg-panel: #111a24;
+      --bg-card: #162231;
+      --bg-input: #0e1722;
+      --border: #213247;
+      --border-focus: #3b82f6;
+      --accent-blue: #38bdf8;
+      --accent-green: #22c55e;
+      --accent-pink: #f472b6;
+      --accent-gray: #64748b;
+      --accent-amber: #f59e0b;
+      --text-main: #f1f5f9;
+      --text-muted: #8da4be;
+      --btn-secondary: #1e2c3d;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg-window); color: var(--text-main); min-height: 100vh; padding: 18px 24px; }
+
+    /* Top Header & Tabs */
+    .app-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+    .header-left { display: flex; flex-direction: column; gap: 12px; }
+    .app-title { font-size: 1.6rem; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
+    
+    .nav-tabs { display: flex; gap: 6px; }
+    .tab-btn {
+      background: var(--btn-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.15s ease;
+    }
+    .tab-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+
+    /* Specimen Overview Stats (Active & In Bloom) */
+    .overview-box {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 210px;
+    }
+    .overview-title { font-size: 0.95rem; font-weight: 700; color: #fff; }
+    .stat-row { display: grid; grid-template-columns: 1fr 1fr; text-align: center; font-size: 0.75rem; color: var(--text-muted); gap: 12px; }
+    .stat-val { font-size: 1.35rem; font-weight: 700; margin-top: 2px; }
+    .stat-active { color: var(--accent-blue); }
+    .stat-bloom { color: var(--accent-green); }
+
+    /* Action & Search Ribbon */
+    .ribbon {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .ribbon-left, .ribbon-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .filter-label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+    .search-input {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      color: #fff;
+      font-size: 0.88rem;
+      min-width: 260px;
+    }
+    .search-input:focus { outline: none; border-color: var(--accent-blue); }
+    .btn-ribbon {
+      background: var(--btn-secondary);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: 0.15s ease;
+    }
+    .btn-ribbon:hover { border-color: var(--accent-blue); }
+    .btn-ribbon:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-ribbon.active-toggle { background: #2563eb; border-color: #3b82f6; }
+
+    /* Table Container with Frozen Headers */
+    .table-container {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow-x: auto;
+      max-height: calc(100vh - 180px);
+      overflow-y: auto;
+    }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+    thead tr { background: #0e1620; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+    th {
+      padding: 12px 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      user-select: none;
+      position: sticky;
+      top: 0;
+      background: #0e1620;
+      z-index: 10;
+      box-shadow: 0 1px 0 var(--border);
+    }
+    th.sortable { cursor: pointer; transition: color 0.15s ease; }
+    th.sortable:hover { color: #fff; background: rgba(255, 255, 255, 0.03); }
+    th .sort-arrow { font-size: 0.72rem; margin-left: 4px; color: var(--text-muted); opacity: 0.4; }
+    th.active-sort .sort-arrow { opacity: 1; color: var(--accent-blue); }
+    th.active-sort { color: #fff; }
+
+    tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s ease; }
+    tbody tr:hover { background: var(--bg-card); }
+    tbody tr.selected { background: #162b42; }
+    td { padding: 12px 14px; color: var(--text-main); white-space: nowrap; }
+
+    .id-pill { color: var(--accent-blue); font-weight: 700; font-family: var(--font-mono); }
+    
+    /* Clean Bloom Status */
+    .bloom-pill { display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #f8fafc; font-weight: 500; }
+    .bloom-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .dot-gray { background-color: #64748b; }
+    .dot-green { background-color: #22c55e; box-shadow: 0 0 7px rgba(34, 197, 94, 0.7); }
+    .dot-blue { background-color: #38bdf8; box-shadow: 0 0 7px rgba(56, 189, 248, 0.7); }
+    .dot-pink { background-color: #f472b6; box-shadow: 0 0 7px rgba(244, 114, 182, 0.7); }
+    .dot-combo { background: linear-gradient(135deg, #38bdf8 50%, #f472b6 50%); box-shadow: 0 0 7px rgba(244, 114, 182, 0.5); }
+
+    /* Specimen Passport Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.82);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 16px;
+    }
+    .passport-window {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 1280px;
+      max-height: 94vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.9);
+      overflow: hidden;
+    }
+    .passport-topbar {
+      background: #0d1520;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .passport-heading { display: flex; align-items: center; gap: 12px; }
+    .passport-id-tag {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--accent-blue);
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .passport-title { font-size: 1.25rem; font-weight: 700; color: #fff; }
+    .badge-inbloom {
+      background: rgba(34, 197, 94, 0.2);
+      border: 1px solid var(--accent-green);
+      color: var(--accent-green);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+    .topbar-actions { display: flex; align-items: center; gap: 8px; }
+    .btn-topbar {
+      background: var(--btn-secondary);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .passport-content {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 16px;
+      padding: 18px 20px;
+      overflow-y: auto;
+    }
+    @media (max-width: 950px) {
+      .passport-content { grid-template-columns: 1fr; }
+    }
+    .card-block {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .card-block-title {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding-bottom: 6px;
+    }
+    .field-grid { display: grid; grid-template-columns: 130px 1fr; gap: 6px 12px; font-size: 0.82rem; align-items: center; }
+    .field-grid .label { color: var(--text-muted); }
+    .field-grid .val { color: #fff; }
+    .alliance-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(34, 197, 94, 0.12);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: var(--accent-green);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-top: 6px;
+      width: fit-content;
+    }
+    .care-actions-row { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+    .notes-textarea {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: #fff;
+      padding: 8px 10px;
+      font-size: 0.82rem;
+      min-height: 80px;
+      resize: vertical;
+      width: 100%;
+    }
+    .notes-textarea:focus { outline: none; border-color: var(--accent-blue); }
+
+    /* Constrained 5-Image Horizontal Slider Strip */
+    .image-strip-wrapper {
+      width: 100%;
+      max-width: 525px;
+    }
+    .image-strip {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 0 12px 0;
+      min-height: 115px;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+    }
+    .image-strip::-webkit-scrollbar { height: 8px; }
+    .image-strip::-webkit-scrollbar-track {
+      background: var(--bg-input);
+      border-radius: 999px;
+      border: 1px solid var(--border);
+    }
+    .image-strip::-webkit-scrollbar-thumb {
+      background: #334a66;
+      border-radius: 999px;
+    }
+    .image-strip::-webkit-scrollbar-thumb:hover { background: var(--accent-blue); }
+    .specimen-thumb {
+      width: 95px;
+      height: 95px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      object-fit: cover;
+      background: var(--bg-input);
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+      flex-shrink: 0;
+    }
+    .specimen-thumb:hover { transform: scale(1.04); border-color: var(--accent-blue); }
+    .no-img-text { font-size: 0.8rem; color: var(--text-muted); padding: 12px 0; }
+
+    .chronicles-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); padding-bottom: 6px; overflow-x: auto; }
+    .chronicle-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 6px 14px;
+      cursor: pointer;
+      border-radius: 4px;
+      white-space: nowrap;
+      transition: 0.15s ease;
+    }
+    .chronicle-tab.active { background: #2563eb; color: #fff; }
+    .chronicles-ledger {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      min-height: 220px;
+      max-height: 280px;
+      overflow-y: auto;
+      padding-top: 8px;
+    }
+    .ledger-entry { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .ledger-main { display: flex; gap: 14px; flex: 1; align-items: flex-start; }
+    .ledger-time { color: var(--accent-blue); white-space: nowrap; width: 100px; flex-shrink: 0; }
+    .ledger-text { color: var(--text-main); flex: 1; }
+    .ledger-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .btn-action-small { background: var(--btn-secondary); border: 1px solid var(--border); color: var(--text-muted); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
+    .btn-action-small:hover { border-color: var(--accent-blue); color: #fff; }
+
+    /* Modals */
+    .generic-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1200;
+      padding: 20px;
+    }
+    .generic-modal-window {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      width: 100%;
+      max-width: 520px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.8);
+    }
+    .generic-modal-title { font-size: 1.1rem; font-weight: 700; color: #fff; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+    .form-group-block { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+    .form-group-block label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: bold; }
+    .form-group-block input, .form-group-block select, .form-group-block textarea {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      padding: 7px 10px;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 0.88rem;
+    }
+    .modal-actions-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+
+    /* Edit & Create 2-Column Grid Modal */
+    .edit-profile-window {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 900px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.9);
+      overflow: hidden;
+    }
+    .edit-profile-body {
+      padding: 20px;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 760px) {
+      .edit-profile-body { grid-template-columns: 1fr; }
+    }
+    .edit-col-title { font-size: 0.85rem; font-weight: 700; color: var(--accent-blue); border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 6px; margin-bottom: 10px; }
+
+    /* Full Gallery Grid Modal */
+    .gallery-window {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 960px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.9);
+      overflow: hidden;
+    }
+    .gallery-grid {
+      padding: 20px;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 14px;
+    }
+    .gallery-grid-item {
+      aspect-ratio: 1 / 1;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      cursor: pointer;
+      background: var(--bg-input);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+    .gallery-grid-item:hover { transform: scale(1.03); border-color: var(--accent-blue); }
+    .gallery-grid-item img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Full View Image Lightbox with Left/Right Arrows */
+    .image-zoom-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.92);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1400;
+      padding: 20px;
+      user-select: none;
+    }
+    .lightbox-container {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      max-width: 92vw;
+      max-height: 88vh;
+    }
+    .zoom-content {
+      max-width: 82vw;
+      max-height: 82vh;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.95);
+      object-fit: contain;
+    }
+    .lightbox-nav {
+      background: rgba(30, 44, 61, 0.85);
+      border: 1px solid var(--border);
+      color: #fff;
+      font-size: 1.5rem;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.15s ease;
+      margin: 0 14px;
+      flex-shrink: 0;
+    }
+    .lightbox-nav:hover { background: var(--accent-blue); color: #000; border-color: var(--accent-blue); }
+    .lightbox-counter {
+      position: absolute;
+      bottom: -32px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+    }
+    .lightbox-close {
+      position: fixed;
+      top: 20px;
+      right: 26px;
+      background: var(--btn-secondary);
+      border: 1px solid var(--border);
+      color: #fff;
+      font-size: 1.2rem;
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top App Navigation & Overview -->
+  <header class="app-header">
+    <div class="header-left">
+      <h1 class="app-title">Jenny's Potted Ledger</h1>
+      <div class="nav-tabs">
+        <button class="tab-btn active" id="tabInventory" onclick="showInventoryView()">Inventory</button>
+        <button class="tab-btn" onclick="openNewOrchidModal()">New Orchid</button>
+        <button class="tab-btn" onclick="alert('Use the ribbon buttons below for bulk water or repot operations.')">Bulk Ops</button>
+      </div>
+    </div>
+    <div class="overview-box">
+      <div class="overview-title">Specimen Overview</div>
+      <div class="stat-row">
+        <div>Active<div class="stat-val stat-active" id="stat-active">0</div></div>
+        <div>In Bloom<div class="stat-val stat-bloom" id="stat-blooms">0</div></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filter & Action Ribbon -->
+  <div class="ribbon">
+    <div class="ribbon-left">
+      <span class="filter-label">Filter / Search:</span>
+      <input type="text" id="searchInput" class="search-input" placeholder="Search genus, lineage, name, alliance, vendor..." oninput="filterAndSortData()">
+      <button class="btn-ribbon" onclick="document.getElementById('searchInput').value=''; filterAndSortData();">Clear</button>
+      <button class="btn-ribbon" onclick="triggerBatchWater()">Bulk Water 💧</button>
+      <button class="btn-ribbon" onclick="triggerBatchRepot()">Bulk Repot 🪴</button>
+    </div>
+    <div class="ribbon-right">
+      <button class="btn-ribbon" onclick="toggleSelectAll()">Select All</button>
+      <button class="btn-ribbon" id="btnRefreshData" onclick="refreshCollectionData()">Refresh 🔄</button>
+      <button class="btn-ribbon" id="btnToggleArchive" onclick="toggleArchiveView()">Historical Archive 📁</button>
+    </div>
+  </div>
+
+  <!-- Inventory Data Grid with Column Header Sort -->
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="headerCheckbox" onchange="toggleSelectAll()"></th>
+          <th class="sortable" onclick="setColumnSort('ID')">ID <span class="sort-arrow" id="arrow-ID">▲</span></th>
+          <th class="sortable" onclick="setColumnSort('Genus')">Genus <span class="sort-arrow" id="arrow-Genus">▲</span></th>
+          <th class="sortable" onclick="setColumnSort('Orchid Name')">Orchid Name <span class="sort-arrow" id="arrow-Orchid Name">▲</span></th>
+          <th class="sortable" onclick="setColumnSort('Acquisition date')">Acquisition <span class="sort-arrow" id="arrow-Acquisition date">▲</span></th>
+          <th class="sortable" onclick="setColumnSort('_Age')">Age <span class="sort-arrow" id="arrow-_Age">▲</span></th>
+          <th class="sortable" onclick="setColumnSort('Last Bloom Date')">Last Bloom Date <span class="sort-arrow" id="arrow-Last Bloom Date">▲</span></th>
+          <th class="sortable" onclick="setColumnSort('In Bloom')">Bloom Status <span class="sort-arrow" id="arrow-In Bloom">▲</span></th>
+          <th class="sortable" onclick="setColumnSort('_ActiveBloomDuration')">Active Bloom <span class="sort-arrow" id="arrow-_ActiveBloomDuration">▲</span></th>
+          <th class="sortable" onclick="setColumnSort('_LastBloomDuration')">Last Bloom Duration <span class="sort-arrow" id="arrow-_LastBloomDuration">▲</span></th>
+        </tr>
+      </thead>
+      <tbody id="inventoryTableBody">
+        <tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 24px;">Loading collection...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Specimen Passport Modal -->
+  <div class="modal-overlay" id="passportModal" onclick="if(event.target===this) closePassport()">
+    <div class="passport-window">
+      <div class="passport-topbar">
+        <div class="passport-heading">
+          <span class="passport-id-tag" id="passIdTag">ID# —</span>
+          <span class="passport-title" id="passModalTitle">Orchid Name</span>
+          <span class="badge-inbloom" id="passModalBadge">IN BLOOM</span>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn-topbar" onclick="window.print()">Export PDF 📄</button>
+          <button class="btn-topbar" onclick="openEditProfileModal()">Edit Specimen Profile ✏️</button>
+          <button class="btn-topbar" onclick="handleArchiveSpecimen()">Archive Specimen 🗄️</button>
+          <button class="btn-topbar" onclick="closePassport()" style="margin-left: 6px;">✕</button>
+        </div>
+      </div>
+
+      <div class="passport-content">
+        <div>
+          <!-- Botanical Info -->
+          <div class="card-block">
+            <div class="card-block-title">🧬 Botanical Info</div>
+            <div class="field-grid">
+              <span class="label">Genus Selection:</span><span class="val" id="p-genus">—</span>
+              <span class="label">Breed Lineage:</span><span class="val" id="p-lineage">—</span>
+              <span class="label">Growth Habitat:</span><span class="val" id="p-habitat">Epiphyte</span>
+              <span class="label">Native Range:</span><span class="val" id="p-range">—</span>
+              <span class="label">Acquisition Date:</span><span class="val" id="p-acqdate">—</span>
+              <span class="label">Vendor Source:</span><span class="val" id="p-vendor">—</span>
+              <span class="label">Acquisition Cost ($):</span><span class="val" id="p-cost">—</span>
+            </div>
+            <div class="alliance-badge" id="p-alliance">🍃 Orchid Alliance</div>
+          </div>
+
+          <!-- Care Profile -->
+          <div class="card-block">
+            <div class="card-block-title">🪴 Care Profile</div>
+            <div class="field-grid">
+              <span class="label">Light Exposure:</span><span class="val" id="p-light">—</span>
+              <span class="label">Watering Baseline:</span><span class="val" id="p-water">—</span>
+              <span class="label">Potting Medium:</span><span class="val" id="p-media">—</span>
+              <span class="label">Humidity Range:</span><span class="val" id="p-humidity">—</span>
+              <span class="label">Fertilizer Routine:</span><span class="val" id="p-fertilizer">—</span>
+              <span class="label">Repot Frequency:</span><span class="val" id="p-repotfreq">—</span>
+              <span class="label">Next Repot Due:</span><span class="val" id="p-repotdue">—</span>
+            </div>
+          </div>
+
+          <!-- Care Indicators -->
+          <div class="card-block">
+            <div class="card-block-title">📊 Recent Care Summary Indicators</div>
+            <div class="field-grid">
+              <span class="label">Last Hydration:</span><span class="val" id="p-lastwater">—</span>
+              <span class="label">Last Repotted:</span><span class="val" id="p-lastrepot">—</span>
+              <span class="label">Bloom Status:</span>
+              <span class="val">
+                <select id="p-bloomstatus-select" onchange="handlePassportBloomChange(this.value)" style="background: var(--bg-input); border: 1px solid var(--border); color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.82rem; cursor: pointer;">
+                  <option value="Not in Bloom">Not in Bloom</option>
+                  <option value="In Bloom">In Bloom</option>
+                  <option value="In Spike">In Spike</option>
+                  <option value="In Bud">In Bud</option>
+                  <option value="In Spike, In Bud">In Spike, In Bud</option>
+                </select>
+                <span id="bloomSaveIndicator" style="font-size: 0.72rem; color: var(--accent-green); margin-left: 8px; display: none;">Saved ✓</span>
+              </span>
+            </div>
+            <div class="care-actions-row">
+              <button class="btn-ribbon" onclick="openWaterModal()">Water Specimen 💧</button>
+              <button class="btn-ribbon" onclick="openRepotModal()">Repot Plant 🪴</button>
+            </div>
+            
+            <div style="margin-top: 10px;">
+              <span class="label" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Manual Observation Notes Input:</span>
+              <textarea class="notes-textarea" id="noteInput" placeholder="Enter specimen observation notes here..."></textarea>
+              <button class="btn-ribbon" style="margin-top: 6px; float: right; background: #2563eb;" onclick="submitObservationNote()">Submit Note 📝</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <!-- Attached Imagery (Constrained 5-Photo Strip + Drive Folder Link) -->
+          <div class="card-block">
+            <div class="card-block-title">🖼️ Attached Specimen Imagery</div>
+            <div class="image-strip-wrapper">
+              <div class="image-strip" id="imageStrip">
+                <span class="no-img-text">Loading specimen imagery...</span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-ribbon" onclick="openFullGalleryModal()">View Full Gallery 🖼️</button>
+              <button class="btn-ribbon" onclick="openSpecimenDriveFolder()">+ Attach Photo</button>
+            </div>
+          </div>
+
+          <!-- Tabbed Operational Chronicles -->
+          <div class="card-block" style="flex: 1;">
+            <div class="card-block-title">📜 Tabbed Operational Chronicles</div>
+            <div class="chronicles-tabs">
+              <button class="chronicle-tab active" onclick="switchChronicleTab(this, 'notes')">Notes</button>
+              <button class="chronicle-tab" onclick="switchChronicleTab(this, 'watering')">Watering Log</button>
+              <button class="chronicle-tab" onclick="switchChronicleTab(this, 'repotting')">Repotting Log</button>
+              <button class="chronicle-tab" onclick="switchChronicleTab(this, 'bloom')">Bloom Log</button>
+            </div>
+            <div class="chronicles-ledger" id="ledgerLog">
+              <div style="padding: 12px; color: var(--text-muted);">Loading logs from specimen sheet...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full Gallery Grid Modal -->
+  <div class="generic-modal-overlay" id="fullGalleryModal" onclick="if(event.target===this) closeFullGalleryModal()" style="z-index: 1300;">
+    <div class="gallery-window">
+      <div class="passport-topbar">
+        <span class="generic-modal-title" id="galleryModalTitle" style="border:none; padding:0;">🖼️ Specimen Photo Gallery</span>
+        <div style="display:flex; gap:8px;">
+          <button class="btn-topbar" onclick="openSpecimenDriveFolder()">+ Add Photos in Drive ↗</button>
+          <button class="btn-topbar" onclick="closeFullGalleryModal()">✕</button>
+        </div>
+      </div>
+      <div class="gallery-grid" id="galleryGridContainer"></div>
+    </div>
+  </div>
+
+  <!-- Image Lightbox Carousel Modal -->
+  <div class="image-zoom-overlay" id="imageZoomModal" onclick="if(event.target===this) closeImageLightbox()">
+    <button class="lightbox-close" onclick="closeImageLightbox()">✕</button>
+    <div class="lightbox-container">
+      <button class="lightbox-nav" onclick="navigateLightbox(-1)" title="Previous (Left Arrow)">❮</button>
+      <img id="zoomedImg" class="zoom-content" src="" alt="Specimen Image">
+      <button class="lightbox-nav" onclick="navigateLightbox(1)" title="Next (Right Arrow)">❯</button>
+      <div class="lightbox-counter" id="lightboxCounter">1 / 1</div>
+    </div>
+  </div>
+
+  <!-- Water Specimen Dialog Modal -->
+  <div class="generic-modal-overlay" id="waterModal" onclick="if(event.target===this) closeCareModals()">
+    <div class="generic-modal-window">
+      <div class="generic-modal-title">💧 Water Specimen</div>
+      <form onsubmit="submitWaterCare(event)">
+        <div class="form-group-block">
+          <label>Watering Method</label>
+          <select id="water_method" required>
+            <option value="Soak">soak</option>
+            <option value="Flush">flush</option>
+            <option value="Mist">mist</option>
+            <option value="Pour">pour</option>
+            <option value="Spot Watering">spot watering</option>
+          </select>
+        </div>
+        <div class="form-group-block">
+          <label>Notes</label>
+          <textarea id="water_notes" rows="3" placeholder="e.g. distilled water, with fertilizer, rain water..."></textarea>
+        </div>
+        <div class="modal-actions-row">
+          <button type="button" class="btn-ribbon" onclick="closeCareModals()">Cancel</button>
+          <button type="submit" class="btn-ribbon" style="background: #2563eb;" id="btnSaveWater">Log Watering</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Repot Plant Dialog Modal -->
+  <div class="generic-modal-overlay" id="repotModal" onclick="if(event.target===this) closeCareModals()">
+    <div class="generic-modal-window">
+      <div class="generic-modal-title">🪴 Repot Specimen</div>
+      <form onsubmit="submitRepotCare(event)">
+        <div class="form-group-block">
+          <label>Repotting Reason / Type</label>
+          <select id="repot_reason" required>
+            <option value="Routine Repot">routine repot</option>
+            <option value="Media Degredation">media degredation</option>
+            <option value="Outgrown Pot">outgrown pot</option>
+            <option value="Root Treatment">root treatment</option>
+          </select>
+        </div>
+        <div class="form-group-block">
+          <label>Notes & Media</label>
+          <textarea id="repot_notes" rows="3" placeholder="e.g. repotted into medium fir bark mix, pruned dead roots..."></textarea>
+        </div>
+        <div class="modal-actions-row">
+          <button type="button" class="btn-ribbon" onclick="closeCareModals()">Cancel</button>
+          <button type="submit" class="btn-ribbon" style="background: #2563eb;" id="btnSaveRepot">Log Repotting</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Unified Chronicle Entry Editor Modal (Notes, Watering, Repotting, Bloom) -->
+  <div class="generic-modal-overlay" id="editLogModal" onclick="if(event.target===this) closeEditLogModal()">
+    <div class="generic-modal-window">
+      <div class="generic-modal-title" id="editLogModalTitle">✏️ Edit Chronicle Entry</div>
+      <form onsubmit="submitEditedLogEntry(event)">
+        <input type="hidden" id="editLogType">
+        <input type="hidden" id="editLogRowIndex">
+        <input type="hidden" id="editLogColIndex">
+
+        <div class="form-group-block" id="editLogSingleDateGroup">
+          <label>Date</label>
+          <input type="date" id="editLogDate">
+        </div>
+
+        <div class="form-group-block" id="editLogMethodGroup" style="display: none;">
+          <label>Watering Method</label>
+          <select id="editLogMethod">
+            <option value="Soak">Soak</option>
+            <option value="Flush">Flush</option>
+            <option value="Mist">Mist</option>
+            <option value="Pour">Pour</option>
+            <option value="Spot Watering">Spot Watering</option>
+          </select>
+        </div>
+
+        <div id="editLogBloomDatesGroup" style="display: none;">
+          <div class="form-group-block">
+            <label>In Bloom Date (Start)</label>
+            <input type="date" id="editLogBloomIn">
+          </div>
+          <div class="form-group-block">
+            <label>Out of Bloom Date (Leave blank if still blooming)</label>
+            <input type="date" id="editLogBloomOut">
+          </div>
+        </div>
+
+        <div class="form-group-block">
+          <label>Notes / Observances</label>
+          <textarea id="editLogNotes" rows="3"></textarea>
+        </div>
+
+        <div class="modal-actions-row">
+          <button type="button" class="btn-ribbon" onclick="closeEditLogModal()">Cancel</button>
+          <button type="submit" class="btn-ribbon" style="background: #2563eb;" id="btnSaveEditedLog">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Comprehensive Edit Specimen Profile Modal -->
+  <div class="generic-modal-overlay" id="editProfileModal" onclick="if(event.target===this) closeEditProfileModal()">
+    <div class="edit-profile-window">
+      <div class="passport-topbar">
+        <span class="generic-modal-title" style="border:none; padding:0;">✏️ Edit Specimen Profile</span>
+        <button class="btn-topbar" onclick="closeEditProfileModal()">✕</button>
+      </div>
+
+      <form id="editProfileForm" onsubmit="saveSpecimenProfile(event)">
+        <input type="hidden" id="edit_ID">
+        
+        <div class="edit-profile-body">
+          <div>
+            <div class="edit-col-title">🧬 Botanical Information</div>
+            
+            <div class="form-group-block">
+              <label>Orchid Name</label>
+              <input type="text" id="edit_Orchid_Name" required>
+            </div>
+            
+            <div class="form-group-block">
+              <label>Genus Selection</label>
+              <select id="edit_Genus">
+                <option value="Aerangis">Aerangis</option>
+                <option value="Aerides">Aerides</option>
+                <option value="Anoectochilus">Anoectochilus</option>
+                <option value="Angraecum">Angraecum</option>
+                <option value="Bletilla">Bletilla</option>
+                <option value="Brassavola">Brassavola</option>
+                <option value="Brassia">Brassia</option>
+                <option value="Brassocattleya">Brassocattleya</option>
+                <option value="Brassolaeliocattleya">Brassolaeliocattleya</option>
+                <option value="Bulbophyllum">Bulbophyllum</option>
+                <option value="Calanthe">Calanthe</option>
+                <option value="Catasetum">Catasetum</option>
+                <option value="Cattleya">Cattleya</option>
+                <option value="Coelogyne">Coelogyne</option>
+                <option value="Cymbidium">Cymbidium</option>
+                <option value="Cypripedium">Cypripedium</option>
+                <option value="Dendrobium">Dendrobium</option>
+                <option value="Dendrochilum">Dendrochilum</option>
+                <option value="Disa">Disa</option>
+                <option value="Dossinia">Dossinia</option>
+                <option value="Dracula">Dracula</option>
+                <option value="Encyclia">Encyclia</option>
+                <option value="Epidendrum">Epidendrum</option>
+                <option value="Galeopetalum">Galeopetalum</option>
+                <option value="Gongora">Gongora</option>
+                <option value="Goodyera">Goodyera</option>
+                <option value="Grammatophyllum">Grammatophyllum</option>
+                <option value="Guarianthe">Guarianthe</option>
+                <option value="Habenaria">Habenaria</option>
+                <option value="Jackfowlieara">Jackfowlieara</option>
+                <option value="Laelia">Laelia</option>
+                <option value="Lepanthes">Lepanthes</option>
+                <option value="Ludisia">Ludisia</option>
+                <option value="Lycaste">Lycaste</option>
+                <option value="Macodes">Macodes</option>
+                <option value="Masdevallia">Masdevallia</option>
+                <option value="Maxillaria">Maxillaria</option>
+                <option value="Meiracyllium">Meiracyllium</option>
+                <option value="Miltonia">Miltonia</option>
+                <option value="Miltoniopsis">Miltoniopsis</option>
+                <option value="Neofinetia">Neofinetia</option>
+                <option value="Oncidium">Oncidium</option>
+                <option value="Oncostele">Oncostele</option>
+                <option value="Paphiopedilum">Paphiopedilum</option>
+                <option value="Phalaenopsis">Phalaenopsis</option>
+                <option value="Phragmipedium">Phragmipedium</option>
+                <option value="Pleurothallis">Pleurothallis</option>
+                <option value="Prosthechea">Prosthechea</option>
+                <option value="Psychopsis">Psychopsis</option>
+                <option value="Restrepia">Restrepia</option>
+                <option value="Rhyncholaelia">Rhyncholaelia</option>
+                <option value="Rhyncattleanthe">Rhyncattleanthe</option>
+                <option value="Sobralia">Sobralia</option>
+                <option value="Stanhopea">Stanhopea</option>
+                <option value="Stenorrhynchos">Stenorrhynchos</option>
+                <option value="Tolumnia">Tolumnia</option>
+                <option value="Trichopilia">Trichopilia</option>
+                <option value="Tuberolabium">Tuberolabium</option>
+                <option value="Vanda">Vanda</option>
+                <option value="Vanilla">Vanilla</option>
+                <option value="Zygopetalum">Zygopetalum</option>
+              </select>
+            </div>
+
+            <div class="form-group-block">
+              <label>Breed Lineage (Species / Hybrid Cross)</label>
+              <input type="text" id="edit_Lineage">
+            </div>
+
+            <div class="form-group-block">
+              <label>Alliance</label>
+              <select id="edit_Alliance">
+                <option value="Angraecoid Alliance">Angraecoid Alliance</option>
+                <option value="Bulbophyllum Alliance">Bulbophyllum Alliance</option>
+                <option value="Catasetinae Alliance">Catasetinae Alliance</option>
+                <option value="Cattleya Alliance">Cattleya Alliance</option>
+                <option value="Coelogyne Alliance">Coelogyne Alliance</option>
+                <option value="Coryanthes Alliance">Coryanthes Alliance</option>
+                <option value="Cymbidium Alliance">Cymbidium Alliance</option>
+                <option value="Cypripedioideae (Slipper Orchid) Alliance">Cypripedioideae (Slipper Orchid) Alliance</option>
+                <option value="Dendrobium Alliance">Dendrobium Alliance</option>
+                <option value="Disa Alliance">Disa Alliance</option>
+                <option value="Epidendrum Alliance">Epidendrum Alliance</option>
+                <option value="Habenaria Alliance">Habenaria Alliance</option>
+                <option value="Jewel Orchid Group">Jewel Orchid Group</option>
+                <option value="Lycaste / Maxillaria Alliance">Lycaste / Maxillaria Alliance</option>
+                <option value="Masdevallia Alliance">Masdevallia Alliance</option>
+                <option value="Miltonia Alliance">Miltonia Alliance</option>
+                <option value="Oncidium Alliance">Oncidium Alliance</option>
+                <option value="Phalaenopsis Alliance">Phalaenopsis Alliance</option>
+                <option value="Pleurothallid Alliance">Pleurothallid Alliance</option>
+                <option value="Sobralia Alliance">Sobralia Alliance</option>
+                <option value="Spiranthinae Alliance">Spiranthinae Alliance</option>
+                <option value="Stanhopeinae Alliance">Stanhopeinae Alliance</option>
+                <option value="Terrestrial (Temperate / Boreal)">Terrestrial (Temperate / Boreal)</option>
+                <option value="Vandaceous Alliance">Vandaceous Alliance</option>
+                <option value="Vanilla Alliance">Vanilla Alliance</option>
+                <option value="Zygopetalum Alliance">Zygopetalum Alliance</option>
+              </select>
+            </div>
+
+            <div class="form-group-block">
+              <label>Growth Habitat</label>
+              <select id="edit_Habitat">
+                <option value="Epiphyte">Epiphyte</option>
+                <option value="Lithophyte">Lithophyte</option>
+                <option value="Terrestrial">Terrestrial</option>
+                <option value="Epiphyte, Lithophyte">Epiphyte, Lithophyte</option>
+              </select>
+            </div>
+
+            <div class="form-group-block">
+              <label>Native Range / Endemic To</label>
+              <input type="text" id="edit_Range">
+            </div>
+
+            <div class="form-group-block">
+              <label>Acquisition Date</label>
+              <input type="date" id="edit_AcqDate">
+            </div>
+
+            <div class="form-group-block">
+              <label>Vendor Source</label>
+              <input type="text" id="edit_Source">
+            </div>
+
+            <div class="form-group-block">
+              <label>Acquisition Cost ($)</label>
+              <input type="text" id="edit_Cost" placeholder="e.g. 25.00">
+            </div>
+          </div>
+
+          <div>
+            <div class="edit-col-title">🪴 Care Profile</div>
+
+            <div class="form-group-block">
+              <label>Light Exposure (Category)</label>
+              <select id="edit_Light">
+                <option value="Shade (200-500 fc)">Shade (200-500 fc)</option>
+                <option value="Low (500-1,000 fc)">Low (500-1,000 fc)</option>
+                <option value="Low-Medium (500–1,500 fc)">Low-Medium (500–1,500 fc)</option>
+                <option value="Medium (1,500-2,500 fc)">Medium (1,500-2,500 fc)</option>
+                <option value="Medium-Bright (2,000–3,000 fc)">Medium-Bright (2,000–3,000 fc)</option>
+                <option value="Bright (3,000-4,500+ fc)">Bright (3,000-4,500+ fc)</option>
+              </select>
+            </div>
+
+            <div class="form-group-block">
+              <label>Approximate Foot Candles</label>
+              <select id="edit_FC">
+                <option value="400–800 fc">400–800 fc</option>
+                <option value="500–1,000 fc">500–1,000 fc</option>
+                <option value="600–1,000 fc">600–1,000 fc</option>
+                <option value="700–1,000 fc">700–1,000 fc</option>
+                <option value="800–1,000 fc">800–1,000 fc</option>
+                <option value="800–1,200 fc">800–1,200 fc</option>
+                <option value="1,500–2,000 fc">1,500–2,000 fc</option>
+                <option value="2,000–3,000 fc">2,000–3,000 fc</option>
+                <option value="2,500–3,000 fc">2,500–3,000 fc</option>
+                <option value="3,000–4,500 fc">3,000–4,500 fc</option>
+              </select>
+            </div>
+
+            <div class="form-group-block">
+              <label>Watering Baseline</label>
+              <select id="edit_Water">
+                <option value="Complete Wet-Dry Cycle">Complete Wet-Dry Cycle</option>
+                <option value="Slight Wet-Dry Cycle">Slight Wet-Dry Cycle</option>
+                <option value="Evenly Moist (Never Dry)">Evenly Moist (Never Dry)</option>
+                <option value="Seasonal Rest (Reduce Water)">Seasonal Rest (Reduce Water)</option>
+                <option value="Seasonal Dry Dormancy">Seasonal Dry Dormancy</option>
+              </select>
+            </div>
+
+            <div class="form-group-block">
+              <label>Potting Medium</label>
+              <input type="text" id="edit_Media" placeholder="e.g. Fir bark + perlite + charcoal">
+            </div>
+
+            <div class="form-group-block">
+              <label>Humidity Range</label>
+              <input type="text" id="edit_Humidity" placeholder="e.g. 50-70%">
+            </div>
+
+            <div class="form-group-block">
+              <label>Fertilizer Routine</label>
+              <input type="text" id="edit_Fertilizer" placeholder="e.g. 1–2 weeks, weakly weekly">
+            </div>
+
+            <div class="form-group-block">
+              <label>Repot Frequency</label>
+              <input type="text" id="edit_RepotFreq" placeholder="e.g. 1–2 years">
+            </div>
+
+            <div class="form-group-block">
+              <label>Next Repot Due</label>
+              <input type="text" id="edit_RepotDue" placeholder="e.g. January 17, 2028">
+            </div>
+          </div>
+        </div>
+
+        <div class="passport-topbar" style="border-top: 1px solid var(--border); border-bottom: none;">
+          <div></div>
+          <div class="modal-actions-row">
+            <button type="button" class="btn-ribbon" onclick="closeEditProfileModal()">Cancel</button>
+            <button type="submit" class="btn-ribbon" style="background: #2563eb;" id="btnSaveProfile">Save Specimen Profile</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- New Orchid Accession Modal -->
+  <div class="generic-modal-overlay" id="newOrchidModal" onclick="if(event.target===this) closeNewOrchidModal()">
+    <div class="edit-profile-window">
+      <div class="passport-topbar">
+        <span class="generic-modal-title" style="border:none; padding:0;">🌱 New Orchid Accession</span>
+        <button class="btn-topbar" onclick="closeNewOrchidModal()">✕</button>
+      </div>
+
+      <form id="newOrchidForm" onsubmit="submitNewOrchid(event)">
+        <div class="edit-profile-body">
+          <div>
+            <div class="edit-col-title">🧬 Botanical Information</div>
+            
+            <div class="form-group-block">
+              <label>Specimen ID # (Leave blank for auto-next)</label>
+              <input type="number" id="new_ID" placeholder="Auto-assigned">
+            </div>
+
+            <div class="form-group-block">
+              <label>Orchid Name *</label>
+              <input type="text" id="new_Orchid_Name" required placeholder="e.g. Phalaenopsis bellina">
+            </div>
+            
+            <div class="form-group-block">
+              <label>Genus Selection</label>
+              <select id="new_Genus"></select>
+            </div>
+
+            <div class="form-group-block">
+              <label>Breed Lineage (Species / Hybrid Cross)</label>
+              <input type="text" id="new_Lineage" placeholder="e.g. Species or Cross">
+            </div>
+
+            <div class="form-group-block">
+              <label>Alliance</label>
+              <select id="new_Alliance"></select>
+            </div>
+
+            <div class="form-group-block">
+              <label>Growth Habitat</label>
+              <select id="new_Habitat">
+                <option value="Epiphyte">Epiphyte</option>
+                <option value="Lithophyte">Lithophyte</option>
+                <option value="Terrestrial">Terrestrial</option>
+                <option value="Epiphyte, Lithophyte">Epiphyte, Lithophyte</option>
+              </select>
+            </div>
+
+            <div class="form-group-block">
+              <label>Native Range / Endemic To</label>
+              <input type="text" id="new_Range" placeholder="e.g. Borneo, SE Asia, Hybrid">
+            </div>
+
+            <div class="form-group-block">
+              <label>Acquisition Date</label>
+              <input type="date" id="new_AcqDate">
+            </div>
+
+            <div class="form-group-block">
+              <label>Vendor Source</label>
+              <input type="text" id="new_Source" placeholder="e.g. Local Orchid Society">
+            </div>
+
+            <div class="form-group-block">
+              <label>Acquisition Cost ($)</label>
+              <input type="text" id="new_Cost" placeholder="e.g. 25.00">
+            </div>
+          </div>
+
+          <div>
+            <div class="edit-col-title">🪴 Care Profile</div>
+
+            <div class="form-group-block">
+              <label>Initial Bloom Status</label>
+              <select id="new_BloomStatus">
+                <option value="Not in Bloom">Not in Bloom</option>
+                <option value="In Bloom">In Bloom</option>
+                <option value="In Spike">In Spike</option>
+                <option value="In Bud">In Bud</option>
+              </select>
+            </div>
+
+            <div class="form-group-block">
+              <label>Light Exposure (Category)</label>
+              <select id="new_Light"></select>
+            </div>
+
+            <div class="form-group-block">
+              <label>Approximate Foot Candles</label>
+              <select id="new_FC"></select>
+            </div>
+
+            <div class="form-group-block">
+              <label>Watering Baseline</label>
+              <select id="new_Water"></select>
+            </div>
+
+            <div class="form-group-block">
+              <label>Potting Medium</label>
+              <input type="text" id="new_Media" value="Fir bark + perlite + charcoal">
+            </div>
+
+            <div class="form-group-block">
+              <label>Humidity Range</label>
+              <input type="text" id="new_Humidity" value="50-70%">
+            </div>
+
+            <div class="form-group-block">
+              <label>Fertilizer Routine</label>
+              <input type="text" id="new_Fertilizer" value="1–2 weeks">
+            </div>
+
+            <div class="form-group-block">
+              <label>Repot Frequency</label>
+              <input type="text" id="new_RepotFreq" value="1–2 years">
+            </div>
+
+            <div class="form-group-block">
+              <label>Next Repot Due</label>
+              <input type="text" id="new_RepotDue" placeholder="e.g. November 13, 2028">
+            </div>
+          </div>
+        </div>
+
+        <div class="passport-topbar" style="border-top: 1px solid var(--border); border-bottom: none;">
+          <span style="font-size: 0.78rem; color: var(--text-muted);">Automatically creates Drive photo folder &amp; ID sheet.</span>
+          <div class="modal-actions-row">
+            <button type="button" class="btn-ribbon" onclick="closeNewOrchidModal()">Cancel</button>
+            <button type="submit" class="btn-ribbon" style="background: #22c55e; color: #000;" id="btnCreateOrchid">Create Accession</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let inventory = [];
+    let archivedInventory = [];
+    let currentView = 'active';
+    let selectedIds = new Set();
+    let currentPassport = null;
+    let currentSheetLogs = { notes: [], watering: [], repotting: [], bloom: [] };
+    let activeChronicleTab = 'notes';
+
+    let currentSpecimenImages = [];
+    let currentDriveFolderUrl = '';
+    let currentLightboxIndex = 0;
+
+    let currentSortColumn = 'ID';
+    let currentSortAsc = true;
+
+    window.onload = function() {
+      loadAllData();
+    };
+
+    function refreshCollectionData() {
+      const btn = document.getElementById('btnRefreshData');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = 'Refreshing...';
+      }
+      loadAllData(() => {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = 'Refresh 🔄';
+        }
+      });
+    }
+
+    function loadAllData(onComplete) {
+      let pending = 2;
+      const done = () => {
+        pending--;
+        if (pending <= 0 && typeof onComplete === 'function') onComplete();
+      };
+
+      google.script.run
+        .withSuccessHandler(data => {
+          renderInventory(data);
+          done();
+        })
+        .withFailureHandler(err => {
+          alert("Error loading inventory: " + err.message);
+          done();
+        })
+        .getInventoryData();
+
+      google.script.run
+        .withSuccessHandler(data => {
+          renderArchivedCount(data);
+          done();
+        })
+        .withFailureHandler(err => {
+          console.log("Archived data fetch error: " + err.message);
+          done();
+        })
+        .getArchivedInventoryData();
+    }
+
+    function renderArchivedCount(data) {
+      archivedInventory = data || [];
+      if (currentView === 'archive') filterAndSortData();
+    }
+
+    function renderInventory(data) {
+      inventory = data;
+      document.getElementById('stat-active').innerText = inventory.length;
+      const blooms = inventory.filter(p => {
+        const s = (p['In Bloom'] || '').toLowerCase();
+        return (s.includes('in bloom') || s.includes('blooming') || s.includes('spike') || s.includes('bud')) && !s.includes('not in bloom');
+      }).length;
+      document.getElementById('stat-blooms').innerText = blooms;
+      filterAndSortData();
+    }
+
+    function toggleArchiveView() {
+      if (currentView === 'active') showArchiveView();
+      else showInventoryView();
+    }
+
+    function showArchiveView() {
+      currentView = 'archive';
+      const btn = document.getElementById('btnToggleArchive');
+      if (btn) {
+        btn.innerText = 'Active Inventory 🪴';
+        btn.classList.add('active-toggle');
+      }
+      const tabInv = document.getElementById('tabInventory');
+      if (tabInv) tabInv.classList.remove('active');
+      selectedIds.clear();
+      filterAndSortData();
+    }
+
+    function showInventoryView() {
+      currentView = 'active';
+      const btn = document.getElementById('btnToggleArchive');
+      if (btn) {
+        btn.innerText = 'Historical Archive 📁';
+        btn.classList.remove('active-toggle');
+      }
+      const tabInv = document.getElementById('tabInventory');
+      if (tabInv) tabInv.classList.add('active');
+      selectedIds.clear();
+      filterAndSortData();
+    }
+
+    function parseLocalDate(dateStr) {
+      if (!dateStr) return null;
+      if (dateStr instanceof Date) return dateStr;
+      const s = String(dateStr).trim();
+      if (!s) return null;
+
+      const partsYMD = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+      if (partsYMD) {
+        return new Date(parseInt(partsYMD[1], 10), parseInt(partsYMD[2], 10) - 1, parseInt(partsYMD[3], 10));
+      }
+
+      const partsMDY = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/);
+      if (partsMDY) {
+        return new Date(parseInt(partsMDY[3], 10), parseInt(partsMDY[1], 10) - 1, parseInt(partsMDY[2], 10));
+      }
+
+      const d = new Date(s);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    function calculateAgeYears(acqDateStr, endDateStr) {
+      if (!acqDateStr) return -1;
+      const acq = parseLocalDate(acqDateStr);
+      if (!acq) return -1;
+      const end = endDateStr ? (parseLocalDate(endDateStr) || new Date()) : new Date();
+      const diff = (end - acq) / (1000 * 60 * 60 * 24 * 365.25);
+      return diff >= 0 ? diff : 0;
+    }
+
+    function formatAgeDisplay(item) {
+      if (!item) return '—';
+      if (item._isArchived) {
+        if (item['Age'] && String(item['Age']).trim() !== '') {
+          return String(item['Age']).trim();
+        }
+        const acq = parseLocalDate(item['Acquisition date']);
+        const arch = parseLocalDate(item['Archived Date']);
+        if (acq && arch && arch >= acq) {
+          let months = (arch.getFullYear() - acq.getFullYear()) * 12 + (arch.getMonth() - acq.getMonth());
+          let days = arch.getDate() - acq.getDate();
+          if (days < 0) {
+            months--;
+            days += new Date(arch.getFullYear(), arch.getMonth(), 0).getDate();
+          }
+          if (months === 0) return `${days} ${days === 1 ? 'day' : 'days'}`;
+          if (days === 0) return `${months} ${months === 1 ? 'mo' : 'mos'}`;
+          return `${months} ${months === 1 ? 'mo' : 'mos'} ${days} ${days === 1 ? 'day' : 'days'}`;
+        }
+        return '—';
+      }
+      const yrs = calculateAgeYears(item['Acquisition date']);
+      if (yrs < 0) return '—';
+      return Math.floor(yrs) + ' yr';
+    }
+
+    function getActiveBloomDurationDays(statusRaw, lastBloomDateStr) {
+      if (!statusRaw || !lastBloomDateStr) return -1;
+      const s = statusRaw.toLowerCase();
+      if ((s.includes('in bloom') || s.includes('blooming')) && !s.includes('not in bloom')) {
+        const start = parseLocalDate(lastBloomDateStr);
+        if (!start) return -1;
+        const diffMs = new Date() - start;
+        return diffMs >= 0 ? Math.floor(diffMs / (1000 * 60 * 60 * 24)) : -1;
+      }
+      return -1;
+    }
+
+    function parseDurationToDays(durStr) {
+      if (!durStr || durStr === '—') return -1;
+      const s = String(durStr).toLowerCase();
+      let total = 0;
+      const mMatch = s.match(/(\d+)\s*mo/);
+      const dMatch = s.match(/(\d+)\s*day/);
+      if (mMatch) total += parseInt(mMatch[1], 10) * 30;
+      if (dMatch) total += parseInt(dMatch[1], 10);
+      return total > 0 ? total : -1;
+    }
+
+    function calculateActiveBloomDuration(statusRaw, lastBloomDateStr) {
+      if (!lastBloomDateStr) return '—';
+      const s = (statusRaw || '').toLowerCase();
+      
+      const isActivelyBlooming = (s.includes('in bloom') || s.includes('blooming')) && !s.includes('not in bloom');
+      if (isActivelyBlooming) {
+        const startNorm = parseLocalDate(lastBloomDateStr);
+        if (!startNorm) return '—';
+        
+        const now = new Date();
+        const nowNorm = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        if (nowNorm < startNorm) return '0 days';
+
+        let months = (nowNorm.getFullYear() - startNorm.getFullYear()) * 12 + (nowNorm.getMonth() - startNorm.getMonth());
+        let days = nowNorm.getDate() - startNorm.getDate();
+
+        if (days < 0) {
+          months--;
+          const prevMonth = new Date(nowNorm.getFullYear(), nowNorm.getMonth(), 0);
+          days += prevMonth.getDate();
+        }
+
+        if (months === 0) return `${days} ${days === 1 ? 'day' : 'days'}`;
+        if (days === 0) return `${months} ${months === 1 ? 'mo' : 'mos'}`;
+        return `${months} ${months === 1 ? 'mo' : 'mos'} ${days} ${days === 1 ? 'day' : 'days'}`;
+      }
+      return '—';
+    }
+
+    function getLastBloomDurationDisplay(item) {
+      const val = (item && (item['_lastCompletedBloomDuration'] || item['Bloom Duration'])) || '';
+      const clean = String(val).trim();
+      if (!clean || clean === '—' || clean === '-') return '—';
+      return clean.replace(/\bmonths\b/g, 'mos').replace(/\bmonth\b/g, 'mo');
+    }
+
+    function setColumnSort(colKey) {
+      if (currentSortColumn === colKey) {
+        currentSortAsc = !currentSortAsc;
+      } else {
+        currentSortColumn = colKey;
+        currentSortAsc = true;
+      }
+
+      document.querySelectorAll('th.sortable').forEach(th => th.classList.remove('active-sort'));
+      document.querySelectorAll('.sort-arrow').forEach(span => span.innerText = '▲');
+      
+      const activeHeader = document.querySelector(`th[onclick="setColumnSort('${colKey}')"]`);
+      if (activeHeader) {
+        activeHeader.classList.add('active-sort');
+        const arrow = document.getElementById(`arrow-${colKey}`);
+        if (arrow) arrow.innerText = currentSortAsc ? '▲' : '▼';
+      }
+
+      filterAndSortData();
+    }
+
+    function filterAndSortData() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const currentList = currentView === 'archive' ? archivedInventory : inventory;
+      let result = currentList.filter(item => {
+        return !q ||
+          (item['Orchid Name'] || '').toLowerCase().includes(q) ||
+          (item['Genus'] || '').toLowerCase().includes(q) ||
+          (item['Species/Hybrid Lineage'] || '').toLowerCase().includes(q) ||
+          (item['Alliance'] || '').toLowerCase().includes(q) ||
+          (item['Source'] || '').toLowerCase().includes(q) ||
+          (item['Final Status'] || '').toLowerCase().includes(q);
+      });
+
+      result.sort((a, b) => {
+        let valA, valB;
+        if (currentSortColumn === 'ID') {
+          valA = parseInt(a['ID'], 10) || 0;
+          valB = parseInt(b['ID'], 10) || 0;
+        } else if (currentSortColumn === '_Age') {
+          valA = calculateAgeYears(a['Acquisition date'], a['Archived Date']);
+          valB = calculateAgeYears(b['Acquisition date'], b['Archived Date']);
+        } else if (currentSortColumn === '_ActiveBloomDuration') {
+          valA = getActiveBloomDurationDays(a['In Bloom'], a['Last Bloom Date']);
+          valB = getActiveBloomDurationDays(b['In Bloom'], b['Last Bloom Date']);
+        } else if (currentSortColumn === '_LastBloomDuration') {
+          valA = parseDurationToDays(getLastBloomDurationDisplay(a));
+          valB = parseDurationToDays(getLastBloomDurationDisplay(b));
+        } else if (currentSortColumn === 'Acquisition date' || currentSortColumn === 'Last Bloom Date') {
+          valA = a[currentSortColumn] ? parseLocalDate(a[currentSortColumn])?.getTime() || 0 : 0;
+          valB = b[currentSortColumn] ? parseLocalDate(b[currentSortColumn])?.getTime() || 0 : 0;
+        } else {
+          valA = (a[currentSortColumn] || '').toString().toLowerCase();
+          valB = (b[currentSortColumn] || '').toString().toLowerCase();
+        }
+
+        if (valA < valB) return currentSortAsc ? -1 : 1;
+        if (valA > valB) return currentSortAsc ? 1 : -1;
+        return 0;
+      });
+
+      renderTable(result);
+    }
+
+    function getBloomStatusHTML(statusRaw) {
+      const status = (statusRaw || 'Not in Bloom').trim();
+      const s = status.toLowerCase();
+
+      let dotClass = 'dot-gray';
+      if (s.includes('not in bloom') || s === '' || s === 'none' || s === 'dormant' || s === 'died' || s === 'rehomed' || s.includes('given away')) {
+        dotClass = 'dot-gray';
+      } else if (s.includes('spike') && s.includes('bud')) {
+        dotClass = 'dot-combo';
+      } else if (s.includes('bud')) {
+        dotClass = 'dot-pink';
+      } else if (s.includes('spike')) {
+        dotClass = 'dot-blue';
+      } else if (s.includes('in bloom') || s.includes('blooming')) {
+        dotClass = 'dot-green';
+      } else {
+        dotClass = 'dot-gray';
+      }
+
+      return `
+        <span class="bloom-pill">
+          <span class="bloom-dot ${dotClass}"></span>
+          <span>${status}</span>
+        </span>
+      `;
+    }
+
+    function renderTable(items) {
+      const tbody = document.getElementById('inventoryTableBody');
+      if (!items.length) {
+        const msg = currentView === 'archive' ? 'No archived orchids found.' : 'No orchids match criteria.';
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: var(--text-muted); padding: 20px;">${msg}</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = items.map(item => {
+        const id = String(item['ID']);
+        const isSelected = selectedIds.has(id);
+        const activeDur = item._isArchived ? '—' : calculateActiveBloomDuration(item['In Bloom'], item['Last Bloom Date']);
+        const lastDur = getLastBloomDurationDisplay(item);
+        const dateOrArchivedCol = item._isArchived ? (item['Archived Date'] || '—') : (item['Last Bloom Date'] || '—');
+
+        return `
+          <tr class="${isSelected ? 'selected' : ''}" onclick="handleRowClick(event, '${id}')">
+            <td onclick="event.stopPropagation()">
+              <input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelectRow('${id}')">
+            </td>
+            <td><span class="id-pill">#${id}</span></td>
+            <td>${item['Genus'] || '—'}</td>
+            <td style="font-weight: 600;">${item['Orchid Name'] || 'Unnamed'}</td>
+            <td>${item['Acquisition date'] || '—'}</td>
+            <td>${formatAgeDisplay(item)}</td>
+            <td>${dateOrArchivedCol}</td>
+            <td>${getBloomStatusHTML(item['In Bloom'])}</td>
+            <td style="color: ${activeDur !== '—' ? 'var(--accent-green)' : 'var(--text-muted)'}; font-family: var(--font-mono);">${activeDur}</td>
+            <td style="color: var(--text-muted); font-family: var(--font-mono);">${lastDur}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function handleRowClick(event, id) {
+      if (event.target.tagName === 'INPUT') return;
+      openPassport(id);
+    }
+
+    function toggleSelectRow(id) {
+      if (selectedIds.has(id)) selectedIds.delete(id);
+      else selectedIds.add(id);
+      filterAndSortData();
+    }
+
+    function toggleSelectAll() {
+      const currentList = currentView === 'archive' ? archivedInventory : inventory;
+      if (selectedIds.size === currentList.length) {
+        selectedIds.clear();
+      } else {
+        currentList.forEach(item => selectedIds.add(String(item['ID'])));
+      }
+      filterAndSortData();
+    }
+
+    /* Passport View Logic */
+    function openPassport(id) {
+      const allRecords = inventory.concat(archivedInventory);
+      currentPassport = allRecords.find(r => String(r['ID']) === String(id));
+      if (!currentPassport) return;
+
+      document.getElementById('passIdTag').innerText = `ID# ${currentPassport['ID']}`;
+      document.getElementById('passModalTitle').innerText = currentPassport['Orchid Name'] || 'Unnamed Specimen';
+      
+      const inBloom = (currentPassport['In Bloom'] || '').toLowerCase().includes('in bloom') && !(currentPassport['In Bloom'] || '').toLowerCase().includes('not in bloom');
+      const badge = document.getElementById('passModalBadge');
+      badge.innerText = (currentPassport['In Bloom'] || 'NOT IN BLOOM').toUpperCase();
+      badge.style.display = (inBloom || currentPassport._isArchived) ? 'inline-block' : 'none';
+
+      document.getElementById('p-genus').innerText = currentPassport['Genus'] || '—';
+      document.getElementById('p-lineage').innerText = currentPassport['Species/Hybrid Lineage'] || '—';
+      document.getElementById('p-habitat').innerText = currentPassport['Growth Habitat'] || 'Epiphyte';
+      document.getElementById('p-range').innerText = currentPassport['Endemic To'] || '—';
+      document.getElementById('p-acqdate').innerText = currentPassport['Acquisition date'] || '—';
+      document.getElementById('p-vendor').innerText = currentPassport['Source'] || '—';
+      
+      const rawCost = String(currentPassport['Acquisition Cost ($)'] || '').replace(/^\$/, '').trim();
+      document.getElementById('p-cost').innerText = rawCost ? '$' + rawCost : '—';
+      
+      document.getElementById('p-alliance').innerText = '🍃 ' + (currentPassport['Alliance'] || 'Orchid Alliance');
+
+      const fc = currentPassport['Approximate Foot Candles'] ? ` (${currentPassport['Approximate Foot Candles']})` : '';
+      document.getElementById('p-light').innerText = (currentPassport['Light Needs'] || 'Medium') + fc;
+      document.getElementById('p-water').innerText = currentPassport['Watering Needs'] || 'Wet-Dry Cycle';
+      document.getElementById('p-media').innerText = currentPassport['Potting Media'] || 'Bark Mix';
+      document.getElementById('p-humidity').innerText = currentPassport['Humidity'] || '50-70%';
+      document.getElementById('p-fertilizer').innerText = currentPassport['Fertilizer Routine'] || 'Weekly weakly';
+      document.getElementById('p-repotfreq').innerText = currentPassport['Repot Every'] || '1–2 years';
+      document.getElementById('p-repotdue').innerText = currentPassport['Next Repot Due'] || '—';
+
+      setDropdownOrAdd('p-bloomstatus-select', currentPassport['In Bloom'] || 'Not in Bloom');
+
+      loadChroniclesFromSheet(id);
+      loadSpecimenImages(id);
+      document.getElementById('passportModal').style.display = 'flex';
+    }
+
+    function handleArchiveSpecimen() {
+      if (!currentPassport) return;
+      const id = currentPassport['ID'];
+      if (!confirm(`Move Specimen #${id} (${currentPassport['Orchid Name']}) to Archived Orchids?`)) return;
+
+      google.script.run
+        .withSuccessHandler(res => {
+          alert(res.message);
+          closePassport();
+          loadAllData();
+        })
+        .withFailureHandler(err => alert("Failed to archive: " + err.message))
+        .webAppArchiveOrchid(id);
+    }
+
+    function loadSpecimenImages(id) {
+      const container = document.getElementById('imageStrip');
+      container.innerHTML = '<span class="no-img-text">Loading specimen imagery...</span>';
+      currentSpecimenImages = [];
+      currentDriveFolderUrl = '';
+
+      google.script.run
+        .withSuccessHandler(res => {
+          currentSpecimenImages = (res && res.images) ? res.images : [];
+          currentDriveFolderUrl = (res && res.folderUrl) ? res.folderUrl : '';
+
+          if (!currentSpecimenImages.length) {
+            container.innerHTML = '<span class="no-img-text">No images attached yet. Click "+ Attach Photo" to open Drive folder.</span>';
+            return;
+          }
+
+          container.innerHTML = currentSpecimenImages.map((img, idx) => {
+            const displayUrl = img.thumbUrl || img.url;
+            return `<img src="${displayUrl}" class="specimen-thumb" alt="Specimen Photo" onclick="openImageLightbox(${idx})" loading="lazy">`;
+          }).join('');
+        })
+        .withFailureHandler(err => {
+          container.innerHTML = '<span class="no-img-text">Failed to load images: ' + err.message + '</span>';
+        })
+        .getSpecimenImages(id);
+    }
+
+    function openSpecimenDriveFolder() {
+      if (currentDriveFolderUrl) {
+        window.open(currentDriveFolderUrl, '_blank', 'noopener,noreferrer');
+      } else {
+        alert('Drive folder URL is still loading or "Orchid Photos" parent folder was not found.');
+      }
+    }
+
+    function openFullGalleryModal() {
+      if (!currentSpecimenImages.length) {
+        alert('No photos available in the gallery yet.');
+        return;
+      }
+      document.getElementById('galleryModalTitle').innerText = `🖼️ ${currentPassport['Orchid Name'] || 'Specimen'} (${currentSpecimenImages.length} Photos)`;
+      const grid = document.getElementById('galleryGridContainer');
+      grid.innerHTML = currentSpecimenImages.map((img, idx) => `
+        <div class="gallery-grid-item" onclick="openImageLightbox(${idx})">
+          <img src="${img.thumbUrl || img.url}" alt="${img.name || 'Orchid Photo'}" loading="lazy">
+        </div>
+      `).join('');
+      document.getElementById('fullGalleryModal').style.display = 'flex';
+    }
+
+    function closeFullGalleryModal() {
+      document.getElementById('fullGalleryModal').style.display = 'none';
+    }
+
+    function openImageLightbox(index) {
+      if (!currentSpecimenImages.length) return;
+      currentLightboxIndex = index;
+      updateLightboxDisplay();
+      document.getElementById('imageZoomModal').style.display = 'flex';
+    }
+
+    function closeImageLightbox() {
+      document.getElementById('imageZoomModal').style.display = 'none';
+    }
+
+    function navigateLightbox(step) {
+      if (!currentSpecimenImages.length) return;
+      currentLightboxIndex = (currentLightboxIndex + step + currentSpecimenImages.length) % currentSpecimenImages.length;
+      updateLightboxDisplay();
+    }
+
+    function updateLightboxDisplay() {
+      const imgObj = currentSpecimenImages[currentLightboxIndex];
+      document.getElementById('zoomedImg').src = imgObj.url;
+      document.getElementById('lightboxCounter').innerText = `${currentLightboxIndex + 1} / ${currentSpecimenImages.length}`;
+    }
+
+    document.addEventListener('keydown', function(e) {
+      const lightbox = document.getElementById('imageZoomModal');
+      if (lightbox && lightbox.style.display === 'flex') {
+        if (e.key === 'ArrowRight') navigateLightbox(1);
+        else if (e.key === 'ArrowLeft') navigateLightbox(-1);
+        else if (e.key === 'Escape') closeImageLightbox();
+      }
+    });
+
+    function loadChroniclesFromSheet(id) {
+      document.getElementById('ledgerLog').innerHTML = '<div style="padding: 12px; color: var(--text-muted);">Loading logs from sheet #' + id + '...</div>';
+      google.script.run
+        .withSuccessHandler(logs => {
+          currentSheetLogs = logs;
+          renderChroniclesLedger();
+          if (logs.watering && logs.watering.length) {
+            const latestWater = logs.watering[logs.watering.length - 1];
+            document.getElementById('p-lastwater').innerText = latestWater.date + ' (' + latestWater.method + ')';
+          } else {
+            document.getElementById('p-lastwater').innerText = 'None recorded';
+          }
+          if (logs.repotting && logs.repotting.length) {
+            const latestRepot = logs.repotting[logs.repotting.length - 1];
+            document.getElementById('p-lastrepot').innerText = latestRepot.date;
+          } else {
+            document.getElementById('p-lastrepot').innerText = 'None recorded';
+          }
+        })
+        .withFailureHandler(err => {
+          document.getElementById('ledgerLog').innerHTML = `<div style="padding: 12px; color: var(--accent-pink);">No individual ID sheet found for #${id}.</div>`;
+        })
+        .getOrchidIdSheetLogs(id);
+    }
+
+    function closePassport() {
+      document.getElementById('passportModal').style.display = 'none';
+      currentPassport = null;
+    }
+
+    function switchChronicleTab(el, tabKey) {
+      document.querySelectorAll('.chronicle-tab').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      activeChronicleTab = tabKey;
+      renderChroniclesLedger();
+    }
+
+    function renderChroniclesLedger() {
+      const container = document.getElementById('ledgerLog');
+      const entries = currentSheetLogs[activeChronicleTab] || [];
+
+      if (!entries.length) {
+        container.innerHTML = `<div style="padding: 12px; color: var(--text-muted);">No entries recorded in ${activeChronicleTab}.</div>`;
+        return;
+      }
+
+      container.innerHTML = entries.map((entry, idx) => {
+        if (activeChronicleTab === 'watering') {
+          return `
+            <div class="ledger-entry">
+              <div class="ledger-main">
+                <span class="ledger-time">${entry.date}</span>
+                <span class="ledger-text"><b>${entry.method}</b> ${entry.notes ? '— ' + entry.notes : ''}</span>
+              </div>
+              <div class="ledger-actions">
+                <button class="btn-action-small" onclick="openEditLogModal('watering', ${idx})" title="Edit Watering">✏️</button>
+                <button class="btn-action-small" onclick="deleteLogEntry('watering', ${idx})" title="Delete Watering">🗑️</button>
+              </div>
+            </div>
+          `;
+        } else if (activeChronicleTab === 'bloom') {
+          return `
+            <div class="ledger-entry">
+              <div class="ledger-main">
+                <span class="ledger-time" style="width: 125px;">In: ${entry.inBloom || '—'}</span>
+                <span class="ledger-text">Out: <b style="color: ${entry.outBloom ? '#f1f5f9' : 'var(--accent-green)'};">${entry.outBloom || 'Active'}</b> &nbsp;|&nbsp; Duration: <b>${entry.duration}</b> ${entry.notes ? '— ' + entry.notes : ''}</span>
+              </div>
+              <div class="ledger-actions">
+                <button class="btn-action-small" onclick="openEditLogModal('bloom', ${idx})" title="Edit Bloom">✏️</button>
+                <button class="btn-action-small" onclick="deleteLogEntry('bloom', ${idx})" title="Delete Bloom">🗑️</button>
+              </div>
+            </div>
+          `;
+        } else if (activeChronicleTab === 'notes') {
+          return `
+            <div class="ledger-entry">
+              <div class="ledger-main">
+                <span class="ledger-time">${entry.date}</span>
+                <span class="ledger-text">${entry.notes || '—'}</span>
+              </div>
+              <div class="ledger-actions">
+                <button class="btn-action-small" onclick="openEditLogModal('notes', ${idx})" title="Edit Note">✏️</button>
+                <button class="btn-action-small" onclick="deleteLogEntry('notes', ${idx})" title="Delete Note">🗑️</button>
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="ledger-entry">
+              <div class="ledger-main">
+                <span class="ledger-time">${entry.date}</span>
+                <span class="ledger-text">${entry.notes || '—'}</span>
+              </div>
+              <div class="ledger-actions">
+                <button class="btn-action-small" onclick="openEditLogModal('repotting', ${idx})" title="Edit Repot">✏️</button>
+                <button class="btn-action-small" onclick="deleteLogEntry('repotting', ${idx})" title="Delete Repot">🗑️</button>
+              </div>
+            </div>
+          `;
+        }
+      }).join('');
+    }
+
+    /* Unified Chronicle Entry Editor */
+    function openEditLogModal(logType, idx) {
+      const entries = currentSheetLogs[logType] || [];
+      const entry = entries[idx];
+      if (!entry) return;
+
+      document.getElementById('editLogType').value = logType;
+      document.getElementById('editLogRowIndex').value = entry.rowIndex;
+      document.getElementById('editLogColIndex').value = entry.colIndex;
+
+      const singleDateGrp = document.getElementById('editLogSingleDateGroup');
+      const methodGrp = document.getElementById('editLogMethodGroup');
+      const bloomDatesGrp = document.getElementById('editLogBloomDatesGroup');
+      const titleEl = document.getElementById('editLogModalTitle');
+
+      singleDateGrp.style.display = 'none';
+      methodGrp.style.display = 'none';
+      bloomDatesGrp.style.display = 'none';
+
+      if (logType === 'notes') {
+        titleEl.innerText = '📝 Edit Observation Note';
+        singleDateGrp.style.display = 'flex';
+        document.getElementById('editLogDate').value = entry.date || '';
+        document.getElementById('editLogNotes').value = entry.notes || '';
+      } else if (logType === 'watering') {
+        titleEl.innerText = '💧 Edit Watering Entry';
+        singleDateGrp.style.display = 'flex';
+        methodGrp.style.display = 'flex';
+        document.getElementById('editLogDate').value = entry.date || '';
+        setDropdownOrAdd('editLogMethod', entry.method || 'Soak');
+        document.getElementById('editLogNotes').value = entry.notes || '';
+      } else if (logType === 'repotting') {
+        titleEl.innerText = '🪴 Edit Repotting Entry';
+        singleDateGrp.style.display = 'flex';
+        document.getElementById('editLogDate').value = entry.date || '';
+        document.getElementById('editLogNotes').value = entry.notes || '';
+      } else if (logType === 'bloom') {
+        titleEl.innerText = '🌸 Edit Bloom Log Entry';
+        bloomDatesGrp.style.display = 'block';
+        document.getElementById('editLogBloomIn').value = entry.inBloom || '';
+        document.getElementById('editLogBloomOut').value = entry.outBloom || '';
+        document.getElementById('editLogNotes').value = entry.notes || '';
+      }
+
+      document.getElementById('editLogModal').style.display = 'flex';
+    }
+
+    function closeEditLogModal() {
+      document.getElementById('editLogModal').style.display = 'none';
+    }
+
+    function submitEditedLogEntry(e) {
+      e.preventDefault();
+      if (!currentPassport) return;
+      const id = currentPassport['ID'];
+      const logType = document.getElementById('editLogType').value;
+      const rowIndex = document.getElementById('editLogRowIndex').value;
+      const colIndex = document.getElementById('editLogColIndex').value;
+
+      const payload = {
+        date: document.getElementById('editLogDate').value,
+        method: document.getElementById('editLogMethod').value,
+        inBloom: document.getElementById('editLogBloomIn').value,
+        outBloom: document.getElementById('editLogBloomOut').value,
+        notes: document.getElementById('editLogNotes').value.trim()
+      };
+
+      const btn = document.getElementById('btnSaveEditedLog');
+      btn.innerText = 'Saving...';
+      btn.disabled = true;
+
+      google.script.run
+        .withSuccessHandler(res => {
+          btn.innerText = 'Save Changes';
+          btn.disabled = false;
+          closeEditLogModal();
+          loadChroniclesFromSheet(id);
+          if (logType === 'bloom') loadAllData();
+        })
+        .withFailureHandler(err => {
+          btn.innerText = 'Save Changes';
+          btn.disabled = false;
+          alert('Failed to update entry: ' + err.message);
+        })
+        .updateIdSheetLogEntry(id, logType, rowIndex, colIndex, payload);
+    }
+
+    function deleteLogEntry(logType, idx) {
+      const entries = currentSheetLogs[logType] || [];
+      const entry = entries[idx];
+      if (!entry || !currentPassport) return;
+
+      if (!confirm(`Remove this ${logType} entry from the specimen ledger?`)) return;
+      const id = currentPassport['ID'];
+
+      google.script.run
+        .withSuccessHandler(res => {
+          loadChroniclesFromSheet(id);
+          if (logType === 'bloom') loadAllData();
+        })
+        .withFailureHandler(err => alert('Failed to delete entry: ' + err.message))
+        .deleteIdSheetLogEntry(id, logType, entry.rowIndex, entry.colIndex);
+    }
+
+    function openWaterModal() {
+      if (!currentPassport) return;
+      document.getElementById('water_method').value = 'Soak';
+      document.getElementById('water_notes').value = '';
+      document.getElementById('waterModal').style.display = 'flex';
+    }
+
+    function openRepotModal() {
+      if (!currentPassport) return;
+      document.getElementById('repot_reason').value = 'Routine Repot';
+      document.getElementById('repot_notes').value = '';
+      document.getElementById('repotModal').style.display = 'flex';
+    }
+
+    function closeCareModals() {
+      document.getElementById('waterModal').style.display = 'none';
+      document.getElementById('repotModal').style.display = 'none';
+    }
+
+    function submitWaterCare(e) {
+      e.preventDefault();
+      const id = currentPassport['ID'];
+      const method = document.getElementById('water_method').value;
+      const notes = document.getElementById('water_notes').value.trim();
+      const btn = document.getElementById('btnSaveWater');
+      btn.innerText = 'Logging...';
+      btn.disabled = true;
+
+      google.script.run
+        .withSuccessHandler(res => {
+          btn.innerText = 'Log Watering';
+          btn.disabled = false;
+          closeCareModals();
+          loadChroniclesFromSheet(id);
+        })
+        .withFailureHandler(err => {
+          btn.innerText = 'Log Watering';
+          btn.disabled = false;
+          alert("Failed to log watering: " + err.message);
+        })
+        .logCareToIdSheet(id, 'Watering', method, notes);
+    }
+
+    function submitRepotCare(e) {
+      e.preventDefault();
+      const id = currentPassport['ID'];
+      const reason = document.getElementById('repot_reason').value;
+      const notes = document.getElementById('repot_notes').value.trim();
+      const combinedNotes = reason + (notes ? ' — ' + notes : '');
+      const btn = document.getElementById('btnSaveRepot');
+      btn.innerText = 'Logging...';
+      btn.disabled = true;
+
+      google.script.run
+        .withSuccessHandler(res => {
+          btn.innerText = 'Log Repotting';
+          btn.disabled = false;
+          closeCareModals();
+          loadChroniclesFromSheet(id);
+        })
+        .withFailureHandler(err => {
+          btn.innerText = 'Log Repotting';
+          btn.disabled = false;
+          alert("Failed to log repotting: " + err.message);
+        })
+        .logCareToIdSheet(id, 'Repotting', reason, combinedNotes);
+    }
+
+    function submitObservationNote() {
+      const note = document.getElementById('noteInput').value.trim();
+      if (!note || !currentPassport) return;
+      const id = currentPassport['ID'];
+
+      google.script.run
+        .withSuccessHandler(res => {
+          document.getElementById('noteInput').value = '';
+          loadChroniclesFromSheet(id);
+        })
+        .withFailureHandler(err => alert("Failed to save note: " + err.message))
+        .logCareToIdSheet(id, 'Observation', '', note);
+    }
+
+    function handlePassportBloomChange(newStatus) {
+      if (!currentPassport || !newStatus) return;
+      const id = currentPassport['ID'];
+
+      const indicator = document.getElementById('bloomSaveIndicator');
+      indicator.innerText = 'Syncing workbook...';
+      indicator.style.color = 'var(--text-muted)';
+      indicator.style.display = 'inline';
+
+      const sLower = newStatus.toLowerCase();
+
+      google.script.run
+        .withSuccessHandler(res => {
+          currentPassport['In Bloom'] = newStatus;
+          if (res.lastBloomDate) {
+            currentPassport['Last Bloom Date'] = res.lastBloomDate;
+          }
+          if (res.closedDuration) {
+            currentPassport['_lastCompletedBloomDuration'] = res.closedDuration;
+            currentPassport['Bloom Duration'] = res.closedDuration;
+          }
+
+          const inBloom = sLower.includes('in bloom') && !sLower.includes('not in bloom');
+          const badge = document.getElementById('passModalBadge');
+          badge.innerText = newStatus.toUpperCase();
+          badge.style.display = inBloom ? 'inline-block' : 'none';
+
+          loadChroniclesFromSheet(id);
+          renderInventory(inventory);
+
+          indicator.innerText = 'Synced ✓';
+          indicator.style.color = 'var(--accent-green)';
+          setTimeout(() => { indicator.style.display = 'none'; }, 2500);
+        })
+        .withFailureHandler(err => {
+          indicator.style.display = 'none';
+          alert('Failed to update bloom status: ' + err.message);
+        })
+        .updateSpecimenBloomStatus(id, newStatus);
+    }
+
+    function openEditProfileModal() {
+      if (!currentPassport) return;
+      document.getElementById('edit_ID').value = currentPassport['ID'];
+      document.getElementById('edit_Orchid_Name').value = currentPassport['Orchid Name'] || '';
+      
+      setDropdownOrAdd('edit_Genus', currentPassport['Genus'] || 'Phalaenopsis');
+      document.getElementById('edit_Lineage').value = currentPassport['Species/Hybrid Lineage'] || '';
+      setDropdownOrAdd('edit_Alliance', currentPassport['Alliance'] || 'Phalaenopsis Alliance');
+      setDropdownOrAdd('edit_Habitat', currentPassport['Growth Habitat'] || 'Epiphyte');
+      document.getElementById('edit_Range').value = currentPassport['Endemic To'] || '';
+      document.getElementById('edit_AcqDate').value = currentPassport['Acquisition date'] || '';
+      document.getElementById('edit_Source').value = currentPassport['Source'] || '';
+      document.getElementById('edit_Cost').value = currentPassport['Acquisition Cost ($)'] || '';
+
+      setDropdownOrAdd('edit_Light', currentPassport['Light Needs'] || 'Medium (1,500-2,500 fc)');
+      setDropdownOrAdd('edit_FC', currentPassport['Approximate Foot Candles'] || '1,500–2,000 fc');
+      setDropdownOrAdd('edit_Water', currentPassport['Watering Needs'] || 'Slight Wet-Dry Cycle');
+      document.getElementById('edit_Media').value = currentPassport['Potting Media'] || '';
+      document.getElementById('edit_Humidity').value = currentPassport['Humidity'] || '';
+      document.getElementById('edit_Fertilizer').value = currentPassport['Fertilizer Routine'] || '';
+      document.getElementById('edit_RepotFreq').value = currentPassport['Repot Every'] || '';
+      document.getElementById('edit_RepotDue').value = currentPassport['Next Repot Due'] || '';
+
+      document.getElementById('editProfileModal').style.display = 'flex';
+    }
+
+    function setDropdownOrAdd(elementId, value) {
+      const select = document.getElementById(elementId);
+      if (!select) return;
+      let found = false;
+      for (let i = 0; i < select.options.length; i++) {
+        if (select.options[i].value.toLowerCase() === (value || '').toLowerCase()) {
+          select.selectedIndex = i;
+          found = true;
+          break;
+        }
+      }
+      if (!found && value) {
+        const newOpt = document.createElement('option');
+        newOpt.value = value;
+        newOpt.text = value;
+        select.add(newOpt);
+        select.value = value;
+      }
+    }
+
+    function closeEditProfileModal() {
+      document.getElementById('editProfileModal').style.display = 'none';
+    }
+
+    function saveSpecimenProfile(e) {
+      e.preventDefault();
+      const saveBtn = document.getElementById('btnSaveProfile');
+      saveBtn.disabled = true;
+      saveBtn.innerText = 'Saving...';
+
+      const updated = {
+        'ID': document.getElementById('edit_ID').value,
+        'Orchid Name': document.getElementById('edit_Orchid_Name').value,
+        'Genus': document.getElementById('edit_Genus').value,
+        'Species/Hybrid Lineage': document.getElementById('edit_Lineage').value,
+        'Alliance': document.getElementById('edit_Alliance').value,
+        'Growth Habitat': document.getElementById('edit_Habitat').value,
+        'Endemic To': document.getElementById('edit_Range').value,
+        'Acquisition date': document.getElementById('edit_AcqDate').value,
+        'Source': document.getElementById('edit_Source').value,
+        'Acquisition Cost ($)': document.getElementById('edit_Cost').value,
+        'Light Needs': document.getElementById('edit_Light').value,
+        'Approximate Foot Candles': document.getElementById('edit_FC').value,
+        'Watering Needs': document.getElementById('edit_Water').value,
+        'Potting Media': document.getElementById('edit_Media').value,
+        'Humidity': document.getElementById('edit_Humidity').value,
+        'Fertilizer Routine': document.getElementById('edit_Fertilizer').value,
+        'Repot Every': document.getElementById('edit_RepotFreq').value,
+        'Next Repot Due': document.getElementById('edit_RepotDue').value
+      };
+
+      google.script.run
+        .withSuccessHandler(res => {
+          saveBtn.disabled = false;
+          saveBtn.innerText = 'Save Specimen Profile';
+          const idx = inventory.findIndex(r => String(r['ID']) === String(updated['ID']));
+          if (idx !== -1) {
+            inventory[idx] = Object.assign(inventory[idx], updated);
+          }
+          closeEditProfileModal();
+          openPassport(updated['ID']);
+          filterAndSortData();
+        })
+        .withFailureHandler(err => {
+          saveBtn.disabled = false;
+          saveBtn.innerText = 'Save Specimen Profile';
+          alert('Save failed: ' + err.message);
+        })
+        .updateOrchidRecord(updated);
+    }
+
+    /* New Orchid Accession Modal */
+    function openNewOrchidModal() {
+      ['Genus', 'Alliance', 'Light', 'FC', 'Water'].forEach(key => {
+        const src = document.getElementById('edit_' + key);
+        const dest = document.getElementById('new_' + key);
+        if (src && dest && dest.options.length === 0) {
+          dest.innerHTML = src.innerHTML;
+        }
+      });
+
+      document.getElementById('newOrchidForm').reset();
+      document.getElementById('new_AcqDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('newOrchidModal').style.display = 'flex';
+    }
+
+    function closeNewOrchidModal() {
+      document.getElementById('newOrchidModal').style.display = 'none';
+    }
+
+    function submitNewOrchid(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnCreateOrchid');
+      btn.disabled = true;
+      btn.innerText = 'Creating...';
+
+      const newRecord = {
+        'ID': document.getElementById('new_ID').value.trim(),
+        'Orchid Name': document.getElementById('new_Orchid_Name').value.trim(),
+        'Genus': document.getElementById('new_Genus').value,
+        'Species/Hybrid Lineage': document.getElementById('new_Lineage').value.trim(),
+        'Alliance': document.getElementById('new_Alliance').value,
+        'Growth Habitat': document.getElementById('new_Habitat').value,
+        'Endemic To': document.getElementById('new_Range').value.trim(),
+        'Acquisition date': document.getElementById('new_AcqDate').value,
+        'Source': document.getElementById('new_Source').value.trim(),
+        'Acquisition Cost ($)': document.getElementById('new_Cost').value.trim(),
+        'In Bloom': document.getElementById('new_BloomStatus').value,
+        'Light Needs': document.getElementById('new_Light').value,
+        'Approximate Foot Candles': document.getElementById('new_FC').value,
+        'Watering Needs': document.getElementById('new_Water').value,
+        'Potting Media': document.getElementById('new_Media').value.trim(),
+        'Humidity': document.getElementById('new_Humidity').value.trim(),
+        'Fertilizer Routine': document.getElementById('new_Fertilizer').value.trim(),
+        'Repot Every': document.getElementById('new_RepotFreq').value.trim(),
+        'Next Repot Due': document.getElementById('new_RepotDue').value.trim()
+      };
+
+      google.script.run
+        .withSuccessHandler(res => {
+          btn.disabled = false;
+          btn.innerText = 'Create Accession';
+          alert(res.message);
+          inventory.push(res.record);
+          renderInventory(inventory);
+          closeNewOrchidModal();
+        })
+        .withFailureHandler(err => {
+          btn.disabled = false;
+          btn.innerText = 'Create Accession';
+          alert('Failed to create orchid: ' + err.message);
+        })
+        .createNewOrchid(newRecord);
+    }
+
+    /* Bulk Ops from Ribbon */
+    function triggerBatchWater() {
+      const ids = Array.from(selectedIds);
+      if (!ids.length) return alert("Select one or more orchids first.");
+      if (confirm(`Bulk water ${ids.length} selected orchids?`)) {
+        google.script.run
+          .withSuccessHandler(res => { alert(res.message); selectedIds.clear(); filterAndSortData(); })
+          .executeBatchAction(ids, 'Watering', null);
+      }
+    }
+
+    function triggerBatchRepot() {
+      const ids = Array.from(selectedIds);
+      if (!ids.length) return alert("Select one or more orchids first.");
+      const media = prompt("Enter potting media used:", "Fir bark + perlite + charcoal");
+      if (!media) return;
+      google.script.run
+        .withSuccessHandler(res => { alert(res.message); selectedIds.clear(); filterAndSortData(); })
+        .executeBatchAction(ids, 'Repotting', { 'Potting Media': media });
+    }
+  </script>
+</body>
+</html>
