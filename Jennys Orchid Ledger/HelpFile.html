@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      :root {
+        --primary: #2e7d32;
+        --primary-dark: #1b5e20;
+        --primary-light: #e8f5e9;
+        --bg-color: #f8fafc;
+        --card-bg: #ffffff;
+        --text-color: #1e293b;
+        --text-muted: #475569;
+        --border-color: #cbd5e1;
+      }
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        margin: 0;
+        padding: 20px;
+        line-height: 1.55;
+      }
+      .header-card {
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+        color: white;
+        padding: 22px 24px;
+        border-radius: 8px;
+        margin-bottom: 18px;
+      }
+      .header-card h2 { margin: 0 0 6px 0; font-size: 22px; }
+      .header-card p { margin: 0; opacity: 0.92; font-size: 13px; }
+
+      .toc {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+        font-size: 12.5px;
+      }
+      .toc strong { color: var(--primary-dark); display: block; margin-bottom: 6px; }
+      .toc-links { display: flex; flex-wrap: wrap; gap: 8px 16px; }
+      .toc-links a { color: var(--primary); text-decoration: none; font-weight: 600; }
+      .toc-links a:hover { text-decoration: underline; }
+
+      .section-title {
+        color: var(--primary-dark);
+        border-bottom: 2px solid var(--primary);
+        padding-bottom: 5px;
+        margin-top: 26px;
+        margin-bottom: 14px;
+        font-size: 15px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        padding: 16px 18px;
+        margin-bottom: 14px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      }
+      .card h4 {
+        margin: 0 0 8px 0;
+        color: var(--primary-dark);
+        font-size: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .badge {
+        background: var(--primary-light);
+        color: var(--primary-dark);
+        font-size: 11px;
+        padding: 2px 10px;
+        border-radius: 12px;
+        border: 1px solid #a5d6a7;
+        font-weight: 700;
+      }
+      .card p { margin: 0 0 10px 0; font-size: 13px; color: var(--text-muted); }
+
+      ol, ul { margin: 6px 0 0 0; padding-left: 20px; font-size: 13px; color: #334155; }
+      li { margin-bottom: 8px; }
+
+      code {
+        background: #f1f5f9;
+        color: #0f172a;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: Consolas, monospace;
+        font-size: 11.5px;
+        border: 1px solid #e2e8f0;
+      }
+
+      .callout {
+        background: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        padding: 10px 14px;
+        margin-top: 10px;
+        border-radius: 0 4px 4px 0;
+        font-size: 12.5px;
+        color: #78350f;
+      }
+      .callout-green {
+        background: #f0fdf4;
+        border-left: 4px solid #16a34a;
+        padding: 10px 14px;
+        margin-top: 10px;
+        border-radius: 0 4px 4px 0;
+        font-size: 12.5px;
+        color: #14532d;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 8px;
+        font-size: 12.5px;
+      }
+      th, td {
+        border: 1px solid var(--border-color);
+        padding: 8px 10px;
+        text-align: left;
+      }
+      th {
+        background: #f1f5f9;
+        color: var(--primary-dark);
+        font-weight: 700;
+      }
+
+      .btn-close {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        background: var(--primary-dark);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: bold;
+        text-align: center;
+        margin-top: 24px;
+        font-size: 14px;
+      }
+      .btn-close:hover { background: #0f3813; }
+    </style>
+  </head>
+  <body>
+
+    <div class="header-card">
+      <h2>🌸 Jenny's Orchid Management System — Step-by-Step User Guide</h2>
+      <p>Complete instructions for setting up your Web App Dashboard, Google Drive photo folders, daily care logs, and bloom tracking.</p>
+    </div>
+
+    <div class="toc">
+      <strong>Quick Navigation:</strong>
+      <div class="toc-links">
+        <a href="#setup">1. First-Time Setup</a>
+        <a href="#webapp">2. Deploying the Web App</a>
+        <a href="#tabs">3. Workbook Tabs</a>
+        <a href="#photos">4. Google Drive Photos</a>
+        <a href="#add">5. Adding a New Orchid</a>
+        <a href="#water">6. Logging Watering</a>
+        <a href="#bloom">7. Tracking Blooms</a>
+        <a href="#repot">8. Repotting &amp; Stoplights</a>
+        <a href="#archive">9. Archiving &amp; Tools</a>
+      </div>
+    </div>
+
+    <!-- SECTION 1 -->
+    <div class="section-title" id="setup">1. First-Time Setup &amp; Permissions</div>
+    <div class="card">
+      <h4>Step A: Authorizing the Spreadsheet Scripts <span class="badge">One-Time Step</span></h4>
+      <p>Before using the menu tools or Web App for the first time, grant permission for the workbook to manage your tabs and Drive photo folders:</p>
+      <ol>
+        <li>In the top Google Sheets toolbar, click <code>🌸 Orchid Tools &gt; 🏥 Run System Health Check</code>.</li>
+        <li>When the <strong>Authorization Required</strong> window pops up, click <strong>OK / Continue</strong> and choose your Google account.</li>
+        <li>If a warning screen appears saying <em>"Google hasn't verified this app"</em>, click <strong>Advanced</strong> (bottom-left) and then click <strong>Go to Jenny's Orchid Management System (unsafe)</strong>.</li>
+        <li>Click <strong>Allow</strong> on the permissions screen.</li>
+      </ol>
+    </div>
+
+<!-- SECTION 2 -->
+    <div class="section-title" id="webapp">2. Deploying &amp; Launching the Web App Dashboard on Your PC</div>
+    <div class="card">
+      <h4>Step B: Activate Your Personal Web App URL <span class="badge">One-Time Setup</span></h4>
+      <p>Your workbook includes a built-in dark-mode dashboard (<em>Jenny's Potted Ledger</em>) for viewing photo galleries, filtering your collection, and logging care on your PC or phone. Follow these steps once on your computer to turn it on:</p>
+      <ol>
+        <li>In Google Sheets, click <code>Extensions &gt; Apps Script</code> in the top menu bar (this opens the script editor in a new browser tab).</li>
+        <li>In the top-right corner of the Apps Script window, click the blue <strong>Deploy</strong> button and choose <strong>New deployment</strong>.</li>
+        <li>Next to <em>"Select type"</em>, click the small <strong>gear icon ⚙️</strong> and choose <strong>Web app</strong>.</li>
+        <li>Fill in the three fields as follows:
+          <ul>
+            <li><strong>Description:</strong> Type <code>Jenny's Potted Ledger v1</code></li>
+            <li><strong>Execute as:</strong> Select <code>Me (your email address)</code></li>
+            <li><strong>Who has access:</strong> Select <code>Only myself</code></li>
+          </ul>
+        </li>
+        <li>Click the blue <strong>Deploy</strong> button at the bottom right. (If prompted to authorize access, follow the same <em>Advanced &gt; Allow</em> steps from Section 1.)</li>
+        <li>Once the deployment succeeds, copy your <strong>Web app URL</strong> (ending in <code>/exec</code>), return to Google Sheets, click <code>🌸 Orchid Tools &gt; 🔗 Set Web App URL</code>, and paste it in!</li>
+      </ol>
+      <div class="callout-green">
+        <strong>How to Open It Anytime:</strong><br>
+        • <strong>From Google Sheets:</strong> Click <code>🌸 Orchid Tools &gt; 🌐 Open Web App Dashboard</code>.<br>
+        • <strong>Bookmark / Desktop Shortcut on Your PC:</strong> Once the Web App opens in Chrome or Edge, press <code>Ctrl + D</code> (or <code>Cmd + D</code> on Mac) to bookmark it—or click the browser's <strong>⋮ (three dots) &gt; Cast, save, and share &gt; Create shortcut</strong> to pin <em>Jenny's Potted Ledger</em> directly to your PC desktop or taskbar!
+      </div>
+    </div>
+
+    <!-- SECTION 3 -->
+    <div class="section-title" id="tabs">3. How Your Workbook is Organized</div>
+    <div class="card">
+      <h4>Tabs &amp; Specimen Ledgers <span class="badge">Architecture</span></h4>
+      <table>
+        <thead>
+          <tr>
+            <th>Tab Name</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Inventory</code></td>
+            <td>Your master collection list. Tracks ID numbers, names, genera, acquisition dates, care needs, current bloom status, and next repot due dates.</td>
+          </tr>
+          <tr>
+            <td><code>Maintenance Log</code></td>
+            <td>Your daily care logbook. Recording a watering or repot here automatically stamps the date/time and copies the entry onto that orchid's personal sheet.</td>
+          </tr>
+          <tr>
+            <td><code>1</code>, <code>2</code>, <code>3</code>... (ID Tabs)</td>
+            <td>Individual passport sheets for each orchid with botanical details, care summary cards, a Google Drive photo link card, and four logs (Bloom, Notes, Repotting, Watering).</td>
+          </tr>
+          <tr>
+            <td><code>Archived Orchids</code></td>
+            <td>Historical record of retired, gifted, or lost orchids—including their total age while in your collection.</td>
+          </tr>
+          <tr>
+            <td><code>Template</code> &amp; <code>Settings</code></td>
+            <td>System blueprint used to generate new orchid sheets and dropdown lists. <strong>Keep these tabs intact.</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SECTION 4 -->
+    <div class="section-title" id="photos">4. Setting Up &amp; Using Google Drive Photo Folders</div>
+    <div class="card">
+      <h4>Automatic Folder Creation &amp; Photo Syncing <span class="badge">Google Drive</span></h4>
+      <p>Your workbook links every orchid to its own dedicated photo folder inside a master <code>Orchid Photos</code> folder in your Google Drive:</p>
+      <ol>
+        <li><strong>Create Your Folders:</strong> Click <code>🌸 Orchid Tools &gt; 🖼️ Photo Archive &amp; Drive &gt; 📁 Create / Sync All Drive Photo Folders</code>.</li>
+        <li><strong>What It Builds:</strong> The script creates a main <code>Orchid Photos</code> folder in your Google Drive, creates a numbered subfolder for every orchid (e.g., <code>1 - Phalaenopsis 'Jenny's First Orchid'</code>), and places a clickable link in cell <code>K3</code> on each orchid's sheet.</li>
+        <li><strong>Uploading Photos:</strong> Open any orchid's numbered tab and click <strong>📁 Open Drive Photo Folder ↗</strong> in cell <code>K3</code> (or click <strong>+ Attach Photo</strong> inside the Web App). Drag and drop your photos directly into that plant's folder.</li>
+        <li><strong>Updating Photo Counts:</strong> After uploading new photos to Drive, run <code>📁 Create / Sync All Drive Photo Folders</code> (or open the orchid in the Web App) to refresh the total photo count (Cell <code>K4</code>) and latest upload date (Cell <code>K5</code>).</li>
+      </ol>
+    </div>
+
+    <!-- SECTION 5 -->
+    <div class="section-title" id="add">5. Adding a New Orchid (Two-Step Workflow)</div>
+    <div class="card">
+      <h4>Onboarding a New Specimen <span class="badge">Step-by-Step</span></h4>
+      <p>You can add orchids either through the Web App's <strong>New Orchid</strong> button or directly in Google Sheets using the two-step menu workflow:</p>
+      <ol>
+        <li><strong>Step 1 — Provision Row:</strong> Click <code>🌸 Orchid Tools &gt; ✨ 1. Provision New Row</code>. The script finds the next available ID number (e.g., <code>2</code>), writes it into <strong>Column A</strong> of <code>Inventory</code>, and places your cursor in <strong>Column B</strong>.</li>
+        <li><strong>Step 2 — Enter Details:</strong> Type in the orchid's <strong>Orchid Name</strong> (Col B), <strong>Genus</strong> (Col C), <strong>Acquisition Date</strong> (Col I), care preferences, and <strong>Repot Every</strong> frequency (Col T).</li>
+        <li><strong>Step 3 — Finalize &amp; Link:</strong> Keep your cursor anywhere on that new row, then click <code>🌸 Orchid Tools &gt; 🔗 2. Finalize &amp; Link Ledger</code>.</li>
+      </ol>
+      <div class="callout-green">
+        <strong>What happens automatically:</strong> The system creates a new numbered tab for that orchid, hyperlinks its ID in <code>Inventory</code>, calculates its first <em>Next Repot Due</em> date, adds a row in <code>Maintenance Log</code>, and creates its Google Drive photo folder.
+      </div>
+    </div>
+
+    <!-- SECTION 6 -->
+    <div class="section-title" id="water">6. Logging Watering &amp; Fertilizing</div>
+    <div class="card">
+      <h4>Method A: Logging a Single Orchid <span class="badge">Quick Entry</span></h4>
+      <ol>
+        <li>Open the <code>Maintenance Log</code> tab and locate the orchid's row.</li>
+        <li>(Optional) Type fertilizer or care notes into <strong>Column E (Notes)</strong> <em>before</em> choosing the watering method.</li>
+        <li>Click the dropdown in <strong>Column C (Method)</strong> and select <em>Soak</em>, <em>Mist</em>, <em>Flush</em>, <em>Pour</em>, or <em>Spot Watering</em>.</li>
+        <li><strong>Column D</strong> immediately stamps the current date and time, and the entry is copied into that orchid's personal <strong>Watering Log</strong> (Columns <code>L:N</code>).</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h4>Method B: Watering Multiple Orchids at Once <span class="badge">Bulk Dialog</span></h4>
+      <ol>
+        <li>On the <code>Maintenance Log</code> tab, highlight the rows of the orchids you watered (hold <code>Ctrl</code> on Windows or <code>Cmd</code> on Mac to select multiple non-adjacent rows).</li>
+        <li>Click <code>🌸 Orchid Tools &gt; 🚿 Watering &amp; Maintenance &gt; Log Bulk Watering (Selected Rows)</code>.</li>
+        <li>Verify the row numbers in the popup box (click the green refresh button if you change your selection), pick your <strong>Watering Method</strong>, type optional <strong>Notes</strong>, and click <strong>Log Maintenance</strong>.</li>
+      </ol>
+    </div>
+
+    <!-- SECTION 7 -->
+    <div class="section-title" id="bloom">7. Tracking Blooms &amp; Bloom Durations</div>
+    <div class="card">
+      <h4>Automatic Bloom Cycle Pairing <span class="badge">Lifecycle</span></h4>
+      <ol>
+        <li><strong>Starting a Bloom:</strong> On <code>Inventory</code> (or inside the Web App Passport), change <strong>In Bloom</strong> to <code>In Bloom</code>. The script sets <strong>Last Bloom Date</strong> to today, turns Cell <code>D5</code> on the orchid's sheet green (<code>🌸 In Bloom</code>), and starts a new row in its <strong>Bloom Log</strong> (Cell <code>A20+</code>).</li>
+        <li><strong>Ending a Bloom:</strong> When the flowers drop, change status back to <code>Not in Bloom</code>. The script records the end date in <strong>Column B</strong> of the Bloom Log and calculates the total bloom duration (e.g., <code>2 months 14 days</code>) in <strong>Column C</strong>.</li>
+        <li><strong>Spikes &amp; Buds:</strong> You can also set status to <code>In Spike</code> (🌱) or <code>In Bud</code> (🌼) to update the status badge without starting the open-bloom timer yet.</li>
+      </ol>
+    </div>
+
+    <!-- SECTION 8 -->
+    <div class="section-title" id="repot">8. Repotting &amp; Stoplight Alerts</div>
+    <div class="card">
+      <h4>Recording a Repot &amp; Updating Due Dates <span class="badge">Maintenance</span></h4>
+      <ol>
+        <li>Go to <code>Maintenance Log</code>, type any potting media notes into <strong>Column I</strong>, and enter the repot date in <strong>Column H (Last Repot Date)</strong>.</li>
+        <li>The script logs the repot on the orchid's personal sheet (Columns <code>I:J</code>), adds the upper end of its <em>Repot Every</em> frequency (e.g., <code>1-2 years</code> adds 24 months), and updates <strong>Next Repot Due</strong> across <code>Maintenance Log</code>, <code>Inventory</code>, and Cell <code>D10</code> of the orchid's sheet.</li>
+        <li>To review or recalculate all repot dates at once, click <code>🌸 Orchid Tools &gt; 📅 Repotting Tools &gt; 👁️ Preview Repot Calculations</code>.</li>
+      </ol>
+      <p style="margin-top: 10px;"><strong>Stoplight Color Key (Inventory Column A &amp; Specimen Cell D10):</strong></p>
+      <ul>
+        <li><strong style="color: #10b981;">Green:</strong> On schedule (more than 30 days until repot is due).</li>
+        <li><strong style="color: #d97706;">Amber:</strong> Upcoming (due within the next 30 days).</li>
+        <li><strong style="color: #dc2626;">Red:</strong> Overdue (past the Next Repot Due date).</li>
+      </ul>
+    </div>
+
+    <!-- SECTION 9 -->
+    <div class="section-title" id="archive">9. Archiving Orchids &amp; Helpful Utilities</div>
+    <div class="card">
+      <h4>Retiring Orchids &amp; Workbook Shortcuts <span class="badge">Management</span></h4>
+      <ol>
+        <li><strong>Archiving a Specimen:</strong> Click <code>🌸 Orchid Tools &gt; 📦 Archive Orchid</code>, enter the orchid's ID number, and enter a final status (such as <em>Gifted</em>, <em>Rehomed</em>, or <em>Died</em>). Its summary and total collection age are saved in <code>Archived Orchids</code>, its row in <code>Inventory</code> is hidden, and its tab is recycled as a hidden <code>TMP_</code> sheet for future orchids.</li>
+        <li><strong>Quick Jump Sidebar:</strong> Click <code>🌸 Orchid Tools &gt; 🧭 Open Navigation Sidebar</code> to search by orchid name or ID number and jump straight to its tab.</li>
+        <li><strong>Excel Backup:</strong> Click <code>🌸 Orchid Tools &gt; 🛠️ System Formatting &gt; 📊 Export Clean XLSX to Excel</code> to download a clean Excel copy of your workbook.</li>
+        <li><strong>Database Checkup:</strong> Run <code>🌸 Orchid Tools &gt; 🏥 Run System Health Check</code> anytime to confirm all active orchids have matching ledger tabs and valid dates.</li>
+      </ol>
+      <div class="callout">
+        <strong>Important Rule:</strong> Never right-click and delete numbered orchid tabs manually—always use <strong>Archive Orchid</strong> so the tab is properly recycled without breaking formulas.
+      </div>
+    </div>
+
+    <button class="btn-close" onclick="google.script.host.close()">Close User Guide</button>
+
+  </body>
+</html>
