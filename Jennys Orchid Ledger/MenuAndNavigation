@@ -1,0 +1,278 @@
+/**
+ * =============================================================================
+ * JENNY'S ORCHID LEDGER - MENU & NAVIGATION (MenuAndNavigation.gs)
+ * =============================================================================
+ * Purpose: Builds the custom "🌸 Orchid Tools" toolbar menu, launches the Web
+ *          App Dashboard, powers the navigation sidebar, and provides summary
+ *          formulas.
+ * =============================================================================
+ */
+
+function onOpen() {
+  const ui = SpreadsheetApp.getUi();
+
+  ui.createMenu("🌸 Orchid Tools")
+    .addItem("🌐 Open Web App Dashboard", "openWebAppDashboard")
+    .addItem("🔗 Set Web App URL", "setWebAppDashboardUrl")
+    .addItem("🧭 Open Navigation Sidebar", "showSidebar")
+    .addSeparator()
+
+    .addItem("✨ 1. Provision New Row", "provisionNewOrchid")
+    .addItem("🔗 2. Finalize & Link Ledger", "finalizeNewOrchid")
+    .addSeparator()
+
+    .addItem("📦 Archive Orchid", "archiveOrchid")
+    .addItem("📦 Bulk Archive Orchids", "bulkArchiveOrchids")
+    .addSeparator()
+
+    .addSubMenu(
+      ui.createMenu("🖼️ Photo Archive & Drive")
+        .addItem("📁 Create / Sync All Drive Photo Folders", "createAndSyncAllDrivePhotoFolders")
+        .addItem("📂 Open Main 'Orchid Photos' Drive Folder", "openMainPhotosFolderModal")
+    )
+    .addSeparator()
+
+    .addSubMenu(
+      ui.createMenu("🚿 Watering & Maintenance")
+        .addItem("Log Bulk Watering (Selected Rows)", "showWateringModal")
+        .addItem("🔄 Sync History by Date", "syncMaintenanceByDatePrompt")
+        .addSeparator()
+        .addItem("🌿 Bulk Add Fertilizer Note", "appendFertilizerNotes")
+        .addItem("🧹 Clean Duplicate Watering Logs", "cleanDuplicateOrchidEntriesByDate")
+    )
+    .addSeparator()
+
+    .addSubMenu(
+      ui.createMenu("📅 Repotting Tools")
+        .addItem("🔄 Sync Repot Dates from Inventory", "syncRepotDatesFromInventory")
+        .addItem("👁️ Preview Repot Calculations", "showRepotPreviewModal")
+        .addItem("📤 Push Inventory Due Dates to ID Sheets", "pushInventoryTToOrchidD10")
+    )
+    .addSeparator()
+
+    .addSubMenu(
+      ui.createMenu("🛠️ System Formatting")
+        .addItem("Refresh All Bloom Icons", "refreshAllBloomStatusFormatting")
+        .addItem("Refresh All Stoplight Dates", "applyAllSystemStoplights")
+        .addItem("Fix Active Sheet Timestamps", "fixAllPhasesSequentially")
+        .addItem("🌸 Recalculate All Bloom Durations", "updateAllBloomDurations")
+        .addSeparator()
+        .addItem("📅 Standardize Dates (Selected Range)", "standardizeSelectedDates")
+        .addItem("📅 Standardize Dates (Active Sheet)", "standardizeActiveSheetDates")
+        .addItem("📅 Standardize All Collection Dates", "standardizeAllOrchidInventoryDates")
+        .addSeparator()
+        .addItem("📊 Export Clean XLSX to Excel", "exportWorkbookToXLSX")
+        .addSeparator()
+        .addItem("🙈 Hide Current Sheet", "hideActiveSheet")
+        .addItem("👁️ Show All Hidden Sheets", "showAllHiddenSheets")
+    )
+    .addSeparator()
+    .addItem("🏥 Run System Health Check", "runSystemHealthCheck")
+    .addItem("📖 System Manual & Guide", "showSystemReadmeModal")
+    .addToUi();
+}
+
+function openWebAppDashboard() {
+  const url = ScriptApp.getService().getUrl();
+  if (!url) {
+    SpreadsheetApp.getUi().alert(
+      "Web App Not Deployed Yet",
+      "To activate the Web App Dashboard:\n\n" +
+      "1. Click Extensions > Apps Script.\n" +
+      "2. Click Deploy (top right) > New deployment.\n" +
+      "3. Click the gear icon next to 'Select type' and choose 'Web app'.\n" +
+      "4. Set 'Execute as: Me' and 'Who has access: Only myself', then click Deploy.",
+      SpreadsheetApp.getUi().ButtonSet.OK
+    );
+    return;
+  }
+
+  const html = HtmlService.createHtmlOutput(
+    `<html><body style="font-family: sans-serif; padding: 14px;">
+      <p>Opening <strong>Jenny's Potted Ledger</strong> Web App...</p>
+      <p><a href="${url}" target="_blank" onclick="google.script.host.close()">Click here if it does not open automatically ↗</a></p>
+      <script>
+        var win = window.open("${url}", "_blank");
+        if (win) { google.script.host.close(); }
+      </script>
+    </body></html>`
+  ).setWidth(360).setHeight(130);
+
+  SpreadsheetApp.getUi().showModalDialog(html, "Launching Web App Dashboard");
+}
+
+function showSidebar() {
+  const html = HtmlService.createHtmlOutputFromFile("Sidebar")
+    .setTitle("Orchid Collection Navigator")
+    .setWidth(300);
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function setActiveSheet(sheetName) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(sheetName);
+  if (sheet) {
+    ss.setActiveSheet(sheet);
+  } else {
+    throw new Error('Sheet "' + sheetName + '" not found.');
+  }
+}
+
+function searchAndNavigateSheetOrOrchid(query) {
+  if (!query || typeof query !== "string") {
+    throw new Error("Please enter a valid search term.");
+  }
+
+  const trimmedQuery = query.trim().toLowerCase();
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheets = ss.getSheets();
+  let targetSheet = null;
+
+  for (let i = 0; i < sheets.length; i++) {
+    const sheetName = sheets[i].getName().toLowerCase();
+    if (sheetName === trimmedQuery || sheetName.includes(trimmedQuery)) {
+      targetSheet = sheets[i];
+      break;
+    }
+  }
+
+  if (!targetSheet) {
+    for (let i = 0; i < sheets.length; i++) {
+      const sheet = sheets[i];
+      try {
+        if (sheet.getLastRow() >= 5) {
+          const b5Value = sheet.getRange("B5").getValue();
+          if (b5Value && typeof b5Value === "string" && b5Value.toLowerCase().includes(trimmedQuery)) {
+            targetSheet = sheet;
+            break;
+          }
+        }
+      } catch (err) {
+        console.warn("Could not read B5 for sheet: " + sheet.getName(), err);
+      }
+    }
+  }
+
+  if (targetSheet) {
+    ss.setActiveSheet(targetSheet);
+    return targetSheet.getName();
+  }
+
+  throw new Error('No matching sheet or orchid name found for: "' + query + '"');
+}
+
+function hideActiveSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getActiveSheet();
+  const visibleSheets = ss.getSheets().filter(s => !s.isSheetHidden());
+
+  if (visibleSheets.length > 1) {
+    sheet.hideSheet();
+  } else {
+    SpreadsheetApp.getUi().alert("Cannot hide the only visible sheet.");
+  }
+}
+
+function showAllHiddenSheets() {
+  SpreadsheetApp.getActiveSpreadsheet().getSheets().forEach(sheet => sheet.showSheet());
+}
+
+function showSystemReadmeModal() {
+  const html = HtmlService.createHtmlOutputFromFile("HelpFile")
+    .setWidth(950)
+    .setHeight(750);
+  SpreadsheetApp.getUi().showModalDialog(html, "Jenny's Orchid Management System - User Guide");
+}
+
+/**
+ * Custom Spreadsheet Formulas for Collection Overview
+ */
+function COUNT_MAIN_ORCHIDS() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const inv = ss.getSheetByName(INVENTORY_SHEET);
+  if (!inv || inv.getLastRow() < 2) return 0;
+
+  const names = inv.getRange(2, NAME_COL + 1, inv.getLastRow() - 1, 1).getValues();
+  let count = 0;
+  for (let i = 0; i < names.length; i++) {
+    if (String(names[i][0]).trim() !== "") count++;
+  }
+  return count;
+}
+
+function COUNT_MAIN_BLOOMS() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const inv = ss.getSheetByName(INVENTORY_SHEET);
+  if (!inv || inv.getLastRow() < 2) return 0;
+
+  const statuses = inv.getRange(2, BLOOM_STATUS_COL + 1, inv.getLastRow() - 1, 1).getValues();
+  let bloomCount = 0;
+  statuses.forEach(row => {
+    const s = String(row[0]).toLowerCase().trim();
+    if (s.includes("in bloom") && !s.includes("not in bloom")) bloomCount++;
+  });
+  return bloomCount;
+}
+
+function GET_MAIN_LATEST_WATERING() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheets = ss.getSheets();
+  let latestDate = new Date(0);
+
+  sheets.forEach(sheet => {
+    if (/^\d+(-\d+)?$/.test(sheet.getName().trim()) && sheet.getLastRow() >= 20) {
+      const colL = sheet.getRange(20, 12, sheet.getLastRow() - 19, 1).getValues();
+      for (let r = 0; r < colL.length; r++) {
+        if (colL[r][0]) {
+          const d = colL[r][0] instanceof Date ? colL[r][0] : new Date(colL[r][0]);
+          if (!isNaN(d.getTime()) && d > latestDate) latestDate = d;
+        }
+      }
+    }
+  });
+
+  return latestDate.getTime() === 0 ? "No Dates Found" : latestDate;
+}
+
+function openWebAppDashboard() {
+  const props = PropertiesService.getScriptProperties();
+  const savedUrl = props.getProperty("WEB_APP_URL");
+  const fallbackUrl = "https://script.google.com/macros/s/AKfycbwdgftSguMMeo3A6YaicBRqrNfhn4rBIJMna5EzaeBMqstORzwEmmAlyvfe7RMCIrHq/exec";
+  const url = (savedUrl && savedUrl.trim().endsWith("/exec")) ? savedUrl.trim() : fallbackUrl;
+
+  const html = HtmlService.createHtmlOutput(
+    `<html><body style="font-family: sans-serif; padding: 14px;">
+      <p>Opening <strong>Jenny's Potted Ledger</strong> Web App...</p>
+      <p><a href="${url}" target="_blank" onclick="google.script.host.close()">Click here if it does not open automatically ↗</a></p>
+      <script>
+        var win = window.open("${url}", "_blank");
+        if (win) { google.script.host.close(); }
+      </script>
+    </body></html>`
+  ).setWidth(360).setHeight(130);
+
+  SpreadsheetApp.getUi().showModalDialog(html, "Launching Web App Dashboard");
+}
+
+function setWebAppDashboardUrl() {
+  const ui = SpreadsheetApp.getUi();
+  const props = PropertiesService.getScriptProperties();
+  const current = props.getProperty("WEB_APP_URL") || "";
+
+  const resp = ui.prompt(
+    "Set Web App Dashboard URL",
+    "Paste your deployed Web App URL (must end in /exec):\n\nCurrent: " + (current || "Default"),
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (resp.getSelectedButton() !== ui.Button.OK) return;
+  const newUrl = resp.getResponseText().trim();
+
+  if (!newUrl.startsWith("https://script.google.com/") || !newUrl.endsWith("/exec")) {
+    ui.alert("Invalid URL", "Please paste the full Web app URL from Deploy > Manage deployments (it must end with /exec).", ui.ButtonSet.OK);
+    return;
+  }
+
+  props.setProperty("WEB_APP_URL", newUrl);
+  ui.alert("Saved! Clicking '🌐 Open Web App Dashboard' will now open your Web App URL.");
+}
