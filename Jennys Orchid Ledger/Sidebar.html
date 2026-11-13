@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 15px; background-color: #f9fbf9; color: #333; }
+      h3 { color: #2e4d2e; border-bottom: 2px solid #d0e0d0; padding-bottom: 5px; margin-top: 20px; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
+      .group { margin-bottom: 20px; }
+      button {
+        display: block; width: 100%; padding: 10px; margin: 5px 0;
+        background-color: #ffffff; border: 1px solid #ccc; border-radius: 4px;
+        text-align: left; cursor: pointer; transition: 0.2s; font-size: 13px;
+      }
+      button:hover { background-color: #e8f5e8; border-color: #4caf50; }
+      .search-box { display: flex; gap: 5px; margin-top: 10px; padding: 5px; background: #eee; border-radius: 4px; }
+      input[type="text"] { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 3px; font-size: 13px; }
+      .go-btn { width: auto; padding: 8px 15px; background-color: #2e4d2e; color: white; border: none; text-align: center; }
+      .go-btn:hover { background-color: #45a049; }
+      .admin-btn { font-size: 11px; color: #555; background-color: #f0f0f0; border-style: dashed; }
+      .footer { margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px; font-size: 10px; color: #999; text-align: center; }
+    </style>
+  </head>
+  <body>
+    <div class="group">
+      <h3>🌸 Active Collection</h3>
+      <button onclick="nav('Inventory')">Master Inventory</button>
+      <button onclick="nav('Maintenance Log')">Maintenance Log</button>
+      <button onclick="nav('Archived Orchids')">Archived Orchids</button>
+
+      <div class="search-box">
+        <input type="text" id="sheetSearch" placeholder="Search ID # or Orchid Name..."
+               onkeydown="if(event.key === 'Enter') jumpToSheet()">
+        <button class="go-btn" onclick="jumpToSheet()">GO</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3>⚙️ Reference & Setup</h3>
+      <button class="admin-btn" onclick="nav('Settings')">Settings & Master Lists</button>
+      <button class="admin-btn" onclick="nav('Template')">Specimen Sheet Template</button>
+    </div>
+
+    <div class="group">
+      <h3>🛠️ Visibility Tools</h3>
+      <button class="admin-btn" onclick="runScript('hideActiveSheet')">🙈 Hide Current Sheet</button>
+      <button class="admin-btn" onclick="runScript('showAllHiddenSheets')">👁️ Show All Hidden Sheets</button>
+    </div>
+
+    <div class="footer">
+      <p>Jenny's Orchid Management System v1.0<br>Botanical Collection Ledger</p>
+    </div>
+
+    <script>
+      function nav(sheetName) {
+        google.script.run
+          .withFailureHandler(msg => alert("Error: " + msg))
+          .setActiveSheet(sheetName);
+      }
+
+      function jumpToSheet() {
+        var input = document.getElementById('sheetSearch');
+        var query = input.value.trim();
+        if (query) {
+          google.script.run
+            .withFailureHandler((err) => alert(err.message || ("No match found for '" + query + "'.")))
+            .withSuccessHandler(() => { input.value = ''; })
+            .searchAndNavigateSheetOrOrchid(query);
+        }
+      }
+
+      function runScript(functionName) {
+        google.script.run
+          .withFailureHandler(msg => alert("Script Error: " + msg))
+          [functionName]();
+      }
+    </script>
+  </body>
+</html>
