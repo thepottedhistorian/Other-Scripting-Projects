@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f8fafc;
+        color: #1e293b;
+        margin: 0;
+        padding: 22px;
+        line-height: 1.55;
+      }
+      .header {
+        background: linear-gradient(135deg, #1b5e20, #2e7d32);
+        color: #ffffff;
+        padding: 20px 24px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+      }
+      .header h2 { margin: 0 0 4px 0; font-size: 20px; }
+      .header p { margin: 0; font-size: 13px; opacity: 0.9; }
+      .release-card {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-left: 4px solid #2e7d32;
+        border-radius: 6px;
+        padding: 16px 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      }
+      .release-title {
+        font-weight: 700;
+        font-size: 15px;
+        color: #1b5e20;
+        margin-bottom: 8px;
+        display: flex;
+        justify-content: space-between;
+      }
+      .release-date {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: normal;
+      }
+      ul { margin: 0; padding-left: 20px; font-size: 13px; color: #334155; }
+      li { margin-bottom: 6px; }
+      code {
+        background: #f1f5f9;
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h2>🌸 Jenny's Orchid Management System — Changelog</h2>
+      <p>Release History &amp; System Architecture Notes</p>
+    </div>
+
+    <div class="release-card">
+      <div class="release-title">
+        <span>v1.0.0 — Tailored Collection Edition</span>
+        <span class="release-date">November 13, 2026</span>
+      </div>
+      <ul>
+        <li><strong>Consolidated Codebase:</strong> Streamlined backend automation into 6 modular scripts (<code>Config.gs</code>, <code>MenuAndNavigation.gs</code>, <code>InventoryAndArchive.gs</code>, <code>EventHandlers.gs</code>, <code>CareAndRepotTools.gs</code>, and <code>FormattingAndDiagnostics.gs</code>) paired with 4 interactive HTML UI templates.</li>
+        <li><strong>Compact A:N Specimen Layout:</strong> Standardized individual specimen tabs to a unified horizontal layout featuring <code>Bloom Log (A:D)</code>, <code>Notes (F:G)</code>, <code>Repotting Log (I:J)</code>, and <code>Watering Log (L:N)</code> starting at Row 20.</li>
+        <li><strong>Header Row Protection:</strong> Added row-level guards (<code>currentRow &lt;= 2</code>) to <code>Maintenance Log</code> edit triggers to protect column headers from accidental timestamp overwrites.</li>
+        <li><strong>Dynamic Collection Scaling:</strong> Removed fixed tab-count limits so all batch formatters, duration audits, and health diagnostics scale automatically as new orchids are added.</li>
+        <li><strong>Archived Age Tracking:</strong> Updated <code>Archived Orchids</code> decommissioning logic to compute each specimen's total time in the collection between Acquisition Date and Archived Date.</li>
+      </ul>
+    </div>
+  </body>
+</html>
