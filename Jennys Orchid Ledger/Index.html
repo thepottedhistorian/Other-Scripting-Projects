@@ -1,9 +1,21 @@
+<!--
+  =============================================================================
+  JENNY'S POTTED LEDGER – BOTANICAL ARCHIVIST (Index.html)
+  =============================================================================
+  Single-Page Application frontend for specimen inventory management,
+  live bloom & care logging, Google Drive photo gallery lightbox, bulk watering
+  modal, newest-first operational chronicles, and PDF botanical dossier export.
+  =============================================================================
+-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Jenny's Potted Ledger – Botanical Archivist</title>
   <style>
+    /* =========================================================================
+       SECTION 1: THEME TOKENS & BASE LAYOUT
+       ========================================================================= */
     :root {
       --bg-window: #0b1118;
       --bg-panel: #111a24;
@@ -25,7 +37,9 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: var(--bg-window); color: var(--text-main); min-height: 100vh; padding: 18px 24px; }
 
-    /* Top Header & Tabs */
+    /* =========================================================================
+       SECTION 2: HEADER, NAVIGATION TABS & OVERVIEW STATS
+       ========================================================================= */
     .app-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
     .header-left { display: flex; flex-direction: column; gap: 12px; }
     .app-title { font-size: 1.6rem; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
@@ -44,7 +58,6 @@
     }
     .tab-btn.active { background: #2563eb; color: #fff; border-color: #2563eb; }
 
-    /* Specimen Overview Stats (Active & In Bloom) */
     .overview-box {
       background: var(--bg-panel);
       border: 1px solid var(--border);
@@ -61,7 +74,9 @@
     .stat-active { color: var(--accent-blue); }
     .stat-bloom { color: var(--accent-green); }
 
-    /* Action & Search Ribbon */
+    /* =========================================================================
+       SECTION 3: ACTION RIBBON & DATA TABLE
+       ========================================================================= */
     .ribbon {
       background: var(--bg-panel);
       border: 1px solid var(--border);
@@ -104,7 +119,6 @@
     .btn-ribbon:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-ribbon.active-toggle { background: #2563eb; border-color: #3b82f6; }
 
-    /* Table Container with Frozen Headers */
     .table-container {
       background: var(--bg-panel);
       border: 1px solid var(--border);
@@ -139,7 +153,6 @@
 
     .id-pill { color: var(--accent-blue); font-weight: 700; font-family: var(--font-mono); }
     
-    /* Clean Bloom Status */
     .bloom-pill { display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; color: #f8fafc; font-weight: 500; }
     .bloom-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .dot-gray { background-color: #64748b; }
@@ -148,7 +161,9 @@
     .dot-pink { background-color: #f472b6; box-shadow: 0 0 7px rgba(244, 114, 182, 0.7); }
     .dot-combo { background: linear-gradient(135deg, #38bdf8 50%, #f472b6 50%); box-shadow: 0 0 7px rgba(244, 114, 182, 0.5); }
 
-    /* Specimen Passport Modal */
+    /* =========================================================================
+       SECTION 4: SPECIMEN PASSPORT MODAL & CHRONICLES
+       ========================================================================= */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -277,10 +292,7 @@
     .notes-textarea:focus { outline: none; border-color: var(--accent-blue); }
 
     /* Constrained 5-Image Horizontal Slider Strip */
-    .image-strip-wrapper {
-      width: 100%;
-      max-width: 525px;
-    }
+    .image-strip-wrapper { width: 100%; max-width: 525px; }
     .image-strip {
       display: flex;
       gap: 10px;
@@ -291,15 +303,8 @@
       scroll-behavior: smooth;
     }
     .image-strip::-webkit-scrollbar { height: 8px; }
-    .image-strip::-webkit-scrollbar-track {
-      background: var(--bg-input);
-      border-radius: 999px;
-      border: 1px solid var(--border);
-    }
-    .image-strip::-webkit-scrollbar-thumb {
-      background: #334a66;
-      border-radius: 999px;
-    }
+    .image-strip::-webkit-scrollbar-track { background: var(--bg-input); border-radius: 999px; border: 1px solid var(--border); }
+    .image-strip::-webkit-scrollbar-thumb { background: #334a66; border-radius: 999px; }
     .image-strip::-webkit-scrollbar-thumb:hover { background: var(--accent-blue); }
     .specimen-thumb {
       width: 95px;
@@ -346,7 +351,9 @@
     .btn-action-small { background: var(--btn-secondary); border: 1px solid var(--border); color: var(--text-muted); padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; cursor: pointer; }
     .btn-action-small:hover { border-color: var(--accent-blue); color: #fff; }
 
-    /* Modals */
+    /* =========================================================================
+       SECTION 5: DIALOGS, GALLERIES & LIGHTBOX CAROUSEL
+       ========================================================================= */
     .generic-modal-overlay {
       position: fixed;
       inset: 0;
@@ -383,7 +390,6 @@
     }
     .modal-actions-row { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 
-    /* Edit & Create 2-Column Grid Modal */
     .edit-profile-window {
       background: var(--bg-panel);
       border: 1px solid var(--border);
@@ -408,7 +414,6 @@
     }
     .edit-col-title { font-size: 0.85rem; font-weight: 700; color: var(--accent-blue); border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 6px; margin-bottom: 10px; }
 
-    /* Full Gallery Grid Modal */
     .gallery-window {
       background: var(--bg-panel);
       border: 1px solid var(--border);
@@ -440,7 +445,6 @@
     .gallery-grid-item:hover { transform: scale(1.03); border-color: var(--accent-blue); }
     .gallery-grid-item img { width: 100%; height: 100%; object-fit: cover; }
 
-    /* Full View Image Lightbox with Left/Right Arrows */
     .image-zoom-overlay {
       position: fixed;
       inset: 0;
@@ -510,7 +514,9 @@
 </head>
 <body>
 
-  <!-- Top App Navigation & Overview -->
+  <!-- =========================================================================
+       TOP APP NAVIGATION & OVERVIEW STATS
+       ========================================================================= -->
   <header class="app-header">
     <div class="header-left">
       <h1 class="app-title">Jenny's Potted Ledger</h1>
@@ -529,7 +535,9 @@
     </div>
   </header>
 
-  <!-- Filter & Action Ribbon -->
+  <!-- =========================================================================
+       FILTER & BULK ACTION RIBBON
+       ========================================================================= -->
   <div class="ribbon">
     <div class="ribbon-left">
       <span class="filter-label">Filter / Search:</span>
@@ -545,7 +553,9 @@
     </div>
   </div>
 
-  <!-- Inventory Data Grid with Column Header Sort -->
+  <!-- =========================================================================
+       MASTER INVENTORY DATA GRID
+       ========================================================================= -->
   <div class="table-container">
     <table>
       <thead>
@@ -568,7 +578,38 @@
     </table>
   </div>
 
-  <!-- Specimen Passport Modal -->
+  <!-- =========================================================================
+       BULK WATER DIALOG MODAL
+       ========================================================================= -->
+  <div class="generic-modal-overlay" id="bulkWaterModal" onclick="if(event.target===this) closeBulkWaterModal()">
+    <div class="generic-modal-window">
+      <div class="generic-modal-title" id="bulkWaterTitle">💧 Bulk Water Selected Orchids</div>
+      <form onsubmit="submitBulkWater(event)">
+        <div class="form-group-block">
+          <label>Watering Method</label>
+          <select id="bulk_water_method" required>
+            <option value="Soak">Soak</option>
+            <option value="Flush">Flush</option>
+            <option value="Mist">Mist</option>
+            <option value="Pour">Pour</option>
+            <option value="Spot Watering">Spot Watering</option>
+          </select>
+        </div>
+        <div class="form-group-block">
+          <label>Notes / Additives</label>
+          <textarea id="bulk_water_notes" rows="3" placeholder="e.g. distilled water, with fertilizer..."></textarea>
+        </div>
+        <div class="modal-actions-row">
+          <button type="button" class="btn-ribbon" onclick="closeBulkWaterModal()">Cancel</button>
+          <button type="submit" class="btn-ribbon" style="background: #2563eb;" id="btnSaveBulkWater">Log Bulk Watering</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       SPECIMEN PASSPORT MODAL
+       ========================================================================= -->
   <div class="modal-overlay" id="passportModal" onclick="if(event.target===this) closePassport()">
     <div class="passport-window">
       <div class="passport-topbar">
@@ -578,7 +619,7 @@
           <span class="badge-inbloom" id="passModalBadge">IN BLOOM</span>
         </div>
         <div class="topbar-actions">
-          <button class="btn-topbar" onclick="window.print()">Export PDF 📄</button>
+          <button class="btn-topbar" onclick="exportSpecimenPDF()">Export PDF 📄</button>
           <button class="btn-topbar" onclick="openEditProfileModal()">Edit Specimen Profile ✏️</button>
           <button class="btn-topbar" onclick="handleArchiveSpecimen()">Archive Specimen 🗄️</button>
           <button class="btn-topbar" onclick="closePassport()" style="margin-left: 6px;">✕</button>
@@ -648,7 +689,7 @@
         </div>
 
         <div>
-          <!-- Attached Imagery (Constrained 5-Photo Strip + Drive Folder Link) -->
+          <!-- Attached Imagery -->
           <div class="card-block">
             <div class="card-block-title">🖼️ Attached Specimen Imagery</div>
             <div class="image-strip-wrapper">
@@ -758,7 +799,7 @@
     </div>
   </div>
 
-  <!-- Unified Chronicle Entry Editor Modal (Notes, Watering, Repotting, Bloom) -->
+  <!-- Unified Chronicle Entry Editor Modal -->
   <div class="generic-modal-overlay" id="editLogModal" onclick="if(event.target===this) closeEditLogModal()">
     <div class="generic-modal-window">
       <div class="generic-modal-title" id="editLogModalTitle">✏️ Edit Chronicle Entry</div>
@@ -1177,6 +1218,9 @@
     </div>
   </div>
 
+  <!-- =========================================================================
+       SECTION 6: CLIENT-SIDE CONTROLLER & DATA SYNCHRONIZATION
+       ========================================================================= -->
   <script>
     let inventory = [];
     let archivedInventory = [];
@@ -1197,6 +1241,9 @@
       loadAllData();
     };
 
+    /* -------------------------------------------------------------------------
+       Data Loading & Table State Management
+       ------------------------------------------------------------------------- */
     function refreshCollectionData() {
       const btn = document.getElementById('btnRefreshData');
       if (btn) {
@@ -1247,7 +1294,7 @@
     }
 
     function renderInventory(data) {
-      inventory = data;
+      inventory = data || [];
       document.getElementById('stat-active').innerText = inventory.length;
       const blooms = inventory.filter(p => {
         const s = (p['In Bloom'] || '').toLowerCase();
@@ -1288,6 +1335,9 @@
       filterAndSortData();
     }
 
+    /* -------------------------------------------------------------------------
+       Date Parsing, Age & Bloom Duration Helpers
+       ------------------------------------------------------------------------- */
     function parseLocalDate(dateStr) {
       if (!dateStr) return null;
       if (dateStr instanceof Date) return dateStr;
@@ -1403,6 +1453,9 @@
       return clean.replace(/\bmonths\b/g, 'mos').replace(/\bmonth\b/g, 'mo');
     }
 
+    /* -------------------------------------------------------------------------
+       Table Sorting, Filtering & Rendering
+       ------------------------------------------------------------------------- */
     function setColumnSort(colKey) {
       if (currentSortColumn === colKey) {
         currentSortAsc = !currentSortAsc;
@@ -1549,7 +1602,9 @@
       filterAndSortData();
     }
 
-    /* Passport View Logic */
+    /* -------------------------------------------------------------------------
+       Specimen Passport Modal, Imagery & Chronicles
+       ------------------------------------------------------------------------- */
     function openPassport(id) {
       const allRecords = inventory.concat(archivedInventory);
       currentPassport = allRecords.find(r => String(r['ID']) === String(id));
@@ -1696,16 +1751,16 @@
       document.getElementById('ledgerLog').innerHTML = '<div style="padding: 12px; color: var(--text-muted);">Loading logs from sheet #' + id + '...</div>';
       google.script.run
         .withSuccessHandler(logs => {
-          currentSheetLogs = logs;
+          currentSheetLogs = logs || { notes: [], watering: [], repotting: [], bloom: [] };
           renderChroniclesLedger();
-          if (logs.watering && logs.watering.length) {
-            const latestWater = logs.watering[logs.watering.length - 1];
+          if (currentSheetLogs.watering && currentSheetLogs.watering.length) {
+            const latestWater = currentSheetLogs.watering[currentSheetLogs.watering.length - 1];
             document.getElementById('p-lastwater').innerText = latestWater.date + ' (' + latestWater.method + ')';
           } else {
             document.getElementById('p-lastwater').innerText = 'None recorded';
           }
-          if (logs.repotting && logs.repotting.length) {
-            const latestRepot = logs.repotting[logs.repotting.length - 1];
+          if (currentSheetLogs.repotting && currentSheetLogs.repotting.length) {
+            const latestRepot = currentSheetLogs.repotting[currentSheetLogs.repotting.length - 1];
             document.getElementById('p-lastrepot').innerText = latestRepot.date;
           } else {
             document.getElementById('p-lastrepot').innerText = 'None recorded';
@@ -1738,7 +1793,12 @@
         return;
       }
 
-      container.innerHTML = entries.map((entry, idx) => {
+      // Render newest entries first while preserving original index for edit/delete
+      const sortedEntries = entries.slice().reverse();
+
+      container.innerHTML = sortedEntries.map((entry, idx) => {
+        const originalIdx = entries.length - 1 - idx;
+
         if (activeChronicleTab === 'watering') {
           return `
             <div class="ledger-entry">
@@ -1747,8 +1807,8 @@
                 <span class="ledger-text"><b>${entry.method}</b> ${entry.notes ? '— ' + entry.notes : ''}</span>
               </div>
               <div class="ledger-actions">
-                <button class="btn-action-small" onclick="openEditLogModal('watering', ${idx})" title="Edit Watering">✏️</button>
-                <button class="btn-action-small" onclick="deleteLogEntry('watering', ${idx})" title="Delete Watering">🗑️</button>
+                <button class="btn-action-small" onclick="openEditLogModal('watering', ${originalIdx})" title="Edit Watering">✏️</button>
+                <button class="btn-action-small" onclick="deleteLogEntry('watering', ${originalIdx})" title="Delete Watering">🗑️</button>
               </div>
             </div>
           `;
@@ -1760,8 +1820,8 @@
                 <span class="ledger-text">Out: <b style="color: ${entry.outBloom ? '#f1f5f9' : 'var(--accent-green)'};">${entry.outBloom || 'Active'}</b> &nbsp;|&nbsp; Duration: <b>${entry.duration}</b> ${entry.notes ? '— ' + entry.notes : ''}</span>
               </div>
               <div class="ledger-actions">
-                <button class="btn-action-small" onclick="openEditLogModal('bloom', ${idx})" title="Edit Bloom">✏️</button>
-                <button class="btn-action-small" onclick="deleteLogEntry('bloom', ${idx})" title="Delete Bloom">🗑️</button>
+                <button class="btn-action-small" onclick="openEditLogModal('bloom', ${originalIdx})" title="Edit Bloom">✏️</button>
+                <button class="btn-action-small" onclick="deleteLogEntry('bloom', ${originalIdx})" title="Delete Bloom">🗑️</button>
               </div>
             </div>
           `;
@@ -1773,8 +1833,8 @@
                 <span class="ledger-text">${entry.notes || '—'}</span>
               </div>
               <div class="ledger-actions">
-                <button class="btn-action-small" onclick="openEditLogModal('notes', ${idx})" title="Edit Note">✏️</button>
-                <button class="btn-action-small" onclick="deleteLogEntry('notes', ${idx})" title="Delete Note">🗑️</button>
+                <button class="btn-action-small" onclick="openEditLogModal('notes', ${originalIdx})" title="Edit Note">✏️</button>
+                <button class="btn-action-small" onclick="deleteLogEntry('notes', ${originalIdx})" title="Delete Note">🗑️</button>
               </div>
             </div>
           `;
@@ -1786,8 +1846,8 @@
                 <span class="ledger-text">${entry.notes || '—'}</span>
               </div>
               <div class="ledger-actions">
-                <button class="btn-action-small" onclick="openEditLogModal('repotting', ${idx})" title="Edit Repot">✏️</button>
-                <button class="btn-action-small" onclick="deleteLogEntry('repotting', ${idx})" title="Delete Repot">🗑️</button>
+                <button class="btn-action-small" onclick="openEditLogModal('repotting', ${originalIdx})" title="Edit Repot">✏️</button>
+                <button class="btn-action-small" onclick="deleteLogEntry('repotting', ${originalIdx})" title="Delete Repot">🗑️</button>
               </div>
             </div>
           `;
@@ -1795,7 +1855,9 @@
       }).join('');
     }
 
-    /* Unified Chronicle Entry Editor */
+    /* -------------------------------------------------------------------------
+       Unified Chronicle Entry Editor
+       ------------------------------------------------------------------------- */
     function openEditLogModal(logType, idx) {
       const entries = currentSheetLogs[logType] || [];
       const entry = entries[idx];
@@ -1899,6 +1961,9 @@
         .deleteIdSheetLogEntry(id, logType, entry.rowIndex, entry.colIndex);
     }
 
+    /* -------------------------------------------------------------------------
+       Individual Specimen Care Logging & Bloom Sync
+       ------------------------------------------------------------------------- */
     function openWaterModal() {
       if (!currentPassport) return;
       document.getElementById('water_method').value = 'Soak';
@@ -2022,6 +2087,9 @@
         .updateSpecimenBloomStatus(id, newStatus);
     }
 
+    /* -------------------------------------------------------------------------
+       Profile Editor & New Accession Modals
+       ------------------------------------------------------------------------- */
     function openEditProfileModal() {
       if (!currentPassport) return;
       document.getElementById('edit_ID').value = currentPassport['ID'];
@@ -2119,7 +2187,6 @@
         .updateOrchidRecord(updated);
     }
 
-    /* New Orchid Accession Modal */
     function openNewOrchidModal() {
       ['Genus', 'Alliance', 'Light', 'FC', 'Water'].forEach(key => {
         const src = document.getElementById('edit_' + key);
@@ -2183,28 +2250,167 @@
         .createNewOrchid(newRecord);
     }
 
-    /* Bulk Ops from Ribbon */
+    /* -------------------------------------------------------------------------
+       Bulk Watering Modal & Bulk Repot Operations
+       ------------------------------------------------------------------------- */
     function triggerBatchWater() {
       const ids = Array.from(selectedIds);
-      if (!ids.length) return alert("Select one or more orchids first.");
-      if (confirm(`Bulk water ${ids.length} selected orchids?`)) {
-        google.script.run
-          .withSuccessHandler(res => { alert(res.message); selectedIds.clear(); filterAndSortData(); })
-          .executeBatchAction(ids, 'Watering', null);
-      }
+      if (!ids.length) return alert("Select one or more orchids from the inventory table first.");
+      document.getElementById('bulkWaterTitle').innerText = `💧 Bulk Water (${ids.length} Selected Orchids)`;
+      document.getElementById('bulk_water_method').value = 'Soak';
+      document.getElementById('bulk_water_notes').value = '';
+      document.getElementById('bulkWaterModal').style.display = 'flex';
+    }
+
+    function closeBulkWaterModal() {
+      document.getElementById('bulkWaterModal').style.display = 'none';
+    }
+
+    function submitBulkWater(e) {
+      e.preventDefault();
+      const ids = Array.from(selectedIds);
+      if (!ids.length) return;
+
+      const method = document.getElementById('bulk_water_method').value;
+      const notes = document.getElementById('bulk_water_notes').value.trim();
+      const btn = document.getElementById('btnSaveBulkWater');
+      btn.innerText = 'Logging...';
+      btn.disabled = true;
+
+      google.script.run
+        .withSuccessHandler(res => {
+          btn.innerText = 'Log Bulk Watering';
+          btn.disabled = false;
+          closeBulkWaterModal();
+          alert(res.message);
+          selectedIds.clear();
+          filterAndSortData();
+        })
+        .withFailureHandler(err => {
+          btn.innerText = 'Log Bulk Watering';
+          btn.disabled = false;
+          alert("Bulk water failed: " + err.message);
+        })
+        .executeBatchAction(ids, 'Watering', { method: method, notes: notes });
     }
 
     function triggerBatchRepot() {
       const ids = Array.from(selectedIds);
-      if (!ids.length) return alert("Select one or more orchids first.");
-      const media = prompt("Enter potting media used:", "Fir bark + perlite + charcoal");
+      if (!ids.length) return alert("Select one or more orchids from the inventory table first.");
+      const media = prompt(`Enter new potting media for ${ids.length} selected orchids:`, "Fresh medium fir bark + perlite + charcoal");
       if (!media) return;
+
       google.script.run
-        .withSuccessHandler(res => { alert(res.message); selectedIds.clear(); filterAndSortData(); })
+        .withSuccessHandler(res => {
+          alert(res.message);
+          selectedIds.clear();
+          loadAllData();
+        })
+        .withFailureHandler(err => alert("Bulk repot failed: " + err.message))
         .executeBatchAction(ids, 'Repotting', { 'Potting Media': media });
     }
-  </script>
 
-  
+    /* -------------------------------------------------------------------------
+       Comprehensive Specimen PDF Botanical Dossier Generator
+       ------------------------------------------------------------------------- */
+    function exportSpecimenPDF() {
+      if (!currentPassport) return;
+
+      const p = currentPassport;
+      const logs = currentSheetLogs || { notes: [], watering: [], repotting: [], bloom: [] };
+
+      function makeLogTable(title, entries, formatter) {
+        if (!entries || !entries.length) return '';
+        const rows = entries.map(formatter).join('');
+        return '<div style="margin-top: 20px;">' +
+          '<h3 style="font-size: 11pt; margin: 10px 0 6px 0; color: #1b5e20; border-bottom: 1px solid #c8e6c9; padding-bottom: 3px; text-transform: uppercase;">' + title + '</h3>' +
+          '<table style="width: 100%; border-collapse: collapse; font-size: 10pt;">' +
+            '<thead>' +
+              '<tr style="background: #f1f5f9; border-bottom: 1px solid #cbd5e1;">' +
+                '<th style="padding: 6px; text-align: left; width: 130px;">Date</th>' +
+                '<th style="padding: 6px; text-align: left;">Details</th>' +
+              '</tr>' +
+            '</thead>' +
+            '<tbody>' + rows + '</tbody>' +
+          '</table>' +
+        '</div>';
+      }
+
+      const notesHtml = makeLogTable('Observation Notes', logs.notes, function(e) {
+        return '<tr><td style="font-family: monospace; white-space: nowrap;">' + (e.date || '') + '</td><td>' + (e.notes || '') + '</td></tr>';
+      });
+
+      const wateringHtml = makeLogTable('Watering Log', logs.watering, function(e) {
+        return '<tr><td style="font-family: monospace; white-space: nowrap;">' + (e.date || '') + '</td><td><b>' + (e.method || '') + '</b>' + (e.notes ? ' — ' + e.notes : '') + '</td></tr>';
+      });
+
+      const repottingHtml = makeLogTable('Repotting Log', logs.repotting, function(e) {
+        return '<tr><td style="font-family: monospace; white-space: nowrap;">' + (e.date || '') + '</td><td>' + (e.notes || '') + '</td></tr>';
+      });
+
+      const bloomHtml = makeLogTable('Bloom History', logs.bloom, function(e) {
+        return '<tr><td style="font-family: monospace; white-space: nowrap;">' + (e.inBloom || '') + '</td><td>Out: <b>' + (e.outBloom || 'Active Bloom') + '</b> | Duration: <b>' + (e.duration || '') + '</b>' + (e.notes ? ' — ' + e.notes : '') + '</td></tr>';
+      });
+
+      const costStr = p['Acquisition Cost ($)'] ? '$' + p['Acquisition Cost ($)'] : '—';
+      const lightStr = (p['Light Needs'] || '—') + (p['Approximate Foot Candles'] ? ' (' + p['Approximate Foot Candles'] + ')' : '');
+
+      const dossierHtml = '<!DOCTYPE html><html><head>' +
+        '<title>Specimen #' + p['ID'] + ' - ' + (p['Orchid Name'] || 'Botanical Dossier') + '</title>' +
+        '<style>' +
+          'body { font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif; color: #1e293b; padding: 30px; line-height: 1.5; }' +
+          'h1 { font-size: 20pt; margin: 0 0 4px 0; color: #0f172a; }' +
+          'h2 { font-size: 12pt; border-bottom: 2px solid #2e7d32; padding-bottom: 4px; margin-top: 24px; color: #1b5e20; text-transform: uppercase; letter-spacing: 0.5px; }' +
+          '.badge { display: inline-block; background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; padding: 2px 8px; border-radius: 4px; font-size: 9pt; font-weight: bold; margin-bottom: 12px; }' +
+          '.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 20px; font-size: 10pt; margin-top: 6px; }' +
+          '.field { padding: 3px 0; border-bottom: 1px solid #f8fafc; }' +
+          '.label { color: #64748b; font-weight: 600; display: inline-block; width: 130px; }' +
+          '.val { color: #0f172a; font-weight: 500; }' +
+          'td, th { border: 1px solid #cbd5e1; padding: 6px 8px; }' +
+          '@media print { body { padding: 0; } button { display: none; } }' +
+        '</style>' +
+        '</head><body>' +
+        '<div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 20px;">' +
+          '<div>' +
+            '<span style="font-family: monospace; font-size: 11pt; font-weight: bold; color: #2563eb;">SPECIMEN ID #' + p['ID'] + '</span>' +
+            '<h1>' + (p['Orchid Name'] || 'Unnamed Specimen') + '</h1>' +
+            '<span class="badge">' + (p['In Bloom'] || 'Not in Bloom') + '</span>' +
+          '</div>' +
+          '<div style="text-align: right; font-size: 9pt; color: #64748b;">Jenny\'s Potted Ledger — Botanical Archive<br>Printed: ' + new Date().toLocaleDateString() + '</div>' +
+        '</div>' +
+        '<h2>🧬 Botanical Information</h2>' +
+        '<div class="grid">' +
+          '<div class="field"><span class="label">Genus:</span> <span class="val">' + (p['Genus'] || '—') + '</span></div>' +
+          '<div class="field"><span class="label">Lineage:</span> <span class="val">' + (p['Species/Hybrid Lineage'] || '—') + '</span></div>' +
+          '<div class="field"><span class="label">Alliance:</span> <span class="val">' + (p['Alliance'] || '—') + '</span></div>' +
+          '<div class="field"><span class="label">Growth Habitat:</span> <span class="val">' + (p['Growth Habitat'] || '—') + '</span></div>' +
+          '<div class="field"><span class="label">Native Range:</span> <span class="val">' + (p['Endemic To'] || '—') + '</span></div>' +
+          '<div class="field"><span class="label">Acquisition Date:</span> <span class="val">' + (p['Acquisition date'] || '—') + '</span></div>' +
+          '<div class="field"><span class="label">Vendor Source:</span> <span class="val">' + (p['Source'] || '—') + '</span></div>' +
+          '<div class="field"><span class="label">Acquisition Cost:</span> <span class="val">' + costStr + '</span></div>' +
+        '</div>' +
+        '<h2>🪴 Care Profile</h2>' +
+        '<div class="grid">' +
+          '<div class="field"><span class="label">Light Exposure:</span> <span class="val">' + lightStr + '</span></div>' +
+          '<div class="field"><span class="label">Watering Baseline:</span> <span class="val">' + (p['Watering Needs'] || '—') + '</span></div>' +
+          '<div class="field"><span class="label">Potting Medium:</span> <span class="val">' + (p['Potting Media'] || '—') + '</span></div>' +
+          '<div class="field"><span class="label">Humidity Range:</span> <span class="val">' + (p['Humidity'] || '—') + '</span></div>' +
+          '<div class="field"><span class="label">Fertilizer Routine:</span> <span class="val">' + (p['Fertilizer Routine'] || '—') + '</span></div>' +
+          '<div class="field"><span class="label">Repot Frequency:</span> <span class="val">' + (p['Repot Every'] || '—') + '</span></div>' +
+          '<div class="field"><span class="label">Next Repot Due:</span> <span class="val">' + (p['Next Repot Due'] || '—') + '</span></div>' +
+        '</div>' +
+        '<h2>📜 Operational Chronicles</h2>' +
+        notesHtml + wateringHtml + repottingHtml + bloomHtml +
+        '</body></html>';
+
+      const printWin = window.open('', '_blank');
+      printWin.document.write(dossierHtml);
+      printWin.document.close();
+      printWin.focus();
+      setTimeout(function() {
+        printWin.print();
+      }, 300);
+    }
+  </script>
 </body>
 </html>
