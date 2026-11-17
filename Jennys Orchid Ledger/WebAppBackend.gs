@@ -1,12 +1,22 @@
 /**
  * =============================================================================
- * JENNY'S ORCHID LEDGER - CONTAINER-BOUND WEB APP BACKEND (WebAppBackend.gs)
+ * JENNY'S ORCHID LEDGER – CONTAINER-BOUND WEB APP BACKEND (WebAppBackend.gs)
  * =============================================================================
  * Serves Index.html and bridges the standalone web app UI with Jenny's active
- * workbook, compact A:N specimen tabs, Archived Orchids, and Google Drive.
+ * workbook, horizontal A:N specimen tabs (Row 20+ data), Archived Orchids,
+ * Maintenance Log, and Google Drive photo folders.
  * =============================================================================
  */
 
+/**
+ * =============================================================================
+ * SECTION 1: WEB APP ENTRYPOINT & DATE/DURATION HELPERS
+ * =============================================================================
+ */
+
+/**
+ * Serves the Single-Page Application (SPA) HTML template.
+ */
 function doGet() {
   return HtmlService.createTemplateFromFile('Index')
     .evaluate()
@@ -15,10 +25,16 @@ function doGet() {
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
+/**
+ * Retrieves the bound master spreadsheet instance.
+ */
 function getWebAppSpreadsheet_() {
   return SpreadsheetApp.getActiveSpreadsheet();
 }
 
+/**
+ * Timezone-safe date parser supporting YYYY-MM-DD, MM/DD/YYYY, and Month D, YYYY.
+ */
 function parseWebAppDate_(val) {
   if (!val) return null;
   if (val instanceof Date && !isNaN(val.getTime())) {
@@ -39,6 +55,9 @@ function parseWebAppDate_(val) {
   return isNaN(parsed.getTime()) ? null : new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
 }
 
+/**
+ * Formats elapsed time between two Date objects as "X months Y days".
+ */
 function formatWebAppDuration_(startDate, endDate) {
   const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
   const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
@@ -58,6 +77,16 @@ function formatWebAppDuration_(startDate, endDate) {
   return parts.join(' ');
 }
 
+/**
+ * =============================================================================
+ * SECTION 2: MASTER INVENTORY & ARCHIVE DATA RETRIEVAL
+ * =============================================================================
+ */
+
+/**
+ * Builds a lookup map of each specimen's latest completed bloom duration
+ * by scanning Cols A:C starting at Row 20 across numbered ID tabs.
+ */
 function getWebAppLastCompletedBloomMap_(ss) {
   const map = {};
   const idPattern = /^\d+(-\d+)?$/;
@@ -66,7 +95,7 @@ function getWebAppLastCompletedBloomMap_(ss) {
     const name = sheet.getName().trim();
     if (!idPattern.test(name) || sheet.getLastRow() < 20) return;
 
-    const numRows = Math.min(sheet.getLastRow() - 19, 40);
+    const numRows = Math.min(sheet.getLastRow() - 19, 45);
     const bloomCols = sheet.getRange(20, 1, numRows, 3).getValues();
     let latestClosedDuration = '';
 
@@ -97,7 +126,8 @@ function getWebAppLastCompletedBloomMap_(ss) {
 }
 
 /**
- * Fetch all active inventory records from 'Inventory'
+ * Fetches all visible active inventory records from 'Inventory'
+ * enriched with completed bloom durations.
  */
 function getInventoryData() {
   try {
@@ -110,7 +140,7 @@ function getInventoryData() {
     const headers = data[0].map(h => String(h).trim());
     const rows = data.slice(1);
 
-    return rows
+    const records = rows
       .filter((row, idx) => !sheet.isRowHiddenByUser(idx + 2) && row[0] !== '' && row[0] !== null && row[0] !== undefined)
       .map((row, index) => {
         let record = { _rowIndex: index + 2 };
@@ -125,13 +155,15 @@ function getInventoryData() {
         record['_lastCompletedBloomDuration'] = lastBloomMap[idKey] || '';
         return record;
       });
+
+    return JSON.parse(JSON.stringify(records));
   } catch (err) {
     throw new Error('Failed to fetch inventory: ' + err.message);
   }
 }
 
 /**
- * Fetch all archived inventory records from 'Archived Orchids'
+ * Fetches all archived specimen records from 'Archived Orchids'.
  */
 function getArchivedInventoryData() {
   try {
@@ -147,7 +179,7 @@ function getArchivedInventoryData() {
     const headers = data[0].map(h => String(h).trim());
     const rows = data.slice(1);
 
-    return rows
+    const records = rows
       .filter(row => row[0] !== '' && row[0] !== null && row[0] !== undefined)
       .map((row, index) => {
         let record = { _rowIndex: index + 2, _isArchived: true };
@@ -176,13 +208,21 @@ function getArchivedInventoryData() {
 
         return record;
       });
+
+    return JSON.parse(JSON.stringify(records));
   } catch (err) {
     throw new Error('Failed to fetch archived inventory: ' + err.message);
   }
 }
 
 /**
- * Web App Archive Endpoint (uses InventoryAndArchive.gs engine for TMP_ recycling)
+ * =============================================================================
+ * SECTION 3: ACCESSION CREATION, ARCHIVING & PROFILE UPDATES
+ * =============================================================================
+ */
+
+/**
+ * Web App Archive Endpoint (delegates to InventoryAndArchive.gs TMP_ tab recycling).
  */
 function webAppArchiveOrchid(id) {
   try {
@@ -195,12 +235,12 @@ function webAppArchiveOrchid(id) {
 }
 
 /**
- * Creates a new orchid accession from the Web App
+ * Creates a new orchid accession in 'Inventory', recycles a TMP_ tab or clones
+ * the Template tab, adds an entry to 'Maintenance Log', and creates the Drive folder.
  */
 function createNewOrchid(newRecord) {
   try {
     const ss = getWebAppSpreadsheet_();
-    const tz = ss.getSpreadsheetTimeZone();
     const sheet = ss.getSheetByName(INVENTORY_SHEET) || ss.getSheets()[0];
     const data = sheet.getDataRange().getValues();
     const headers = data[0].map(h => String(h).trim());
@@ -261,18 +301,63 @@ function createNewOrchid(newRecord) {
       ensureSpecimenDrivePhotoFolder_(assignedId, newRecord['Orchid Name'], idSheet);
     }
 
-    return {
+    return JSON.parse(JSON.stringify({
       success: true,
       record: newRecord,
       message: `Created Specimen #${assignedId} (${newRecord['Orchid Name']}) and Drive photo folder.`
-    };
+    }));
   } catch (err) {
     throw new Error('Failed to create orchid: ' + err.message);
   }
 }
 
 /**
- * 3-Way Bloom Status Sync from Passport Modal
+ * Updates a specimen's botanical and care profile fields in 'Inventory'
+ * and keeps its Drive photo folder name synchronized.
+ */
+function updateOrchidRecord(updatedRecord) {
+  try {
+    const ss = getWebAppSpreadsheet_();
+    const sheet = ss.getSheetByName(INVENTORY_SHEET) || ss.getSheets()[0];
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0].map(h => String(h).trim());
+    const idColIdx = headers.indexOf('ID');
+    const targetId = String(updatedRecord['ID']).trim();
+    let targetRowIndex = -1;
+
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][idColIdx]).trim() === targetId) {
+        targetRowIndex = i + 1;
+        break;
+      }
+    }
+    if (targetRowIndex === -1) throw new Error(`Specimen ID #${targetId} not found.`);
+
+    headers.forEach((header, colIdx) => {
+      if (updatedRecord.hasOwnProperty(header)) {
+        sheet.getRange(targetRowIndex, colIdx + 1).setValue(updatedRecord[header]);
+      }
+    });
+
+    if (updatedRecord['Orchid Name'] && typeof ensureSpecimenDrivePhotoFolder_ === 'function') {
+      ensureSpecimenDrivePhotoFolder_(targetId, updatedRecord['Orchid Name'], ss.getSheetByName(targetId));
+    }
+
+    return { success: true, message: `Specimen #${targetId} updated successfully.` };
+  } catch (err) {
+    throw new Error('Update failed: ' + err.message);
+  }
+}
+
+/**
+ * =============================================================================
+ * SECTION 4: 3-WAY BLOOM STATUS SYNC & GOOGLE DRIVE GALLERY
+ * =============================================================================
+ */
+
+/**
+ * Synchronizes bloom status across the Inventory sheet, individual ID tab D5,
+ * and opens/closes Bloom Log rows starting at Row 20 (Cols A:D).
  */
 function updateSpecimenBloomStatus(id, newStatus) {
   try {
@@ -316,7 +401,7 @@ function updateSpecimenBloomStatus(id, newStatus) {
       }
 
       const maxRow = Math.max(idSheet.getLastRow(), 25);
-      let dataStartRow = 20;
+      const dataStartRow = 20;
       let lastFilledRow = dataStartRow - 1;
       let openBloomRow = -1;
       let openBloomStartDate = null;
@@ -353,20 +438,20 @@ function updateSpecimenBloomStatus(id, newStatus) {
       }
     }
 
-    return {
+    return JSON.parse(JSON.stringify({
       success: true,
       newStatus: newStatus,
       lastBloomDate: isNowBlooming ? todayIso : null,
       closedDuration: closedDurationText || null,
       message: `Updated #${targetId} to "${newStatus}" and synced Bloom Log.`
-    };
+    }));
   } catch (err) {
     throw new Error('Failed to sync bloom status: ' + err.message);
   }
 }
 
 /**
- * Loads images from Google Drive "[ID] - [Orchid Name]" folder & syncs K2:N5
+ * Loads specimen photos from Google Drive "[ID] - [Orchid Name]" folder & syncs K2:N5.
  */
 function getSpecimenImages(id) {
   const images = [];
@@ -411,17 +496,24 @@ function getSpecimenImages(id) {
     Logger.log('Error reading drive folder photos for ID ' + targetIdStr + ': ' + e.message);
   }
 
-  return { images: images, folderUrl: folderUrl };
+  return JSON.parse(JSON.stringify({ images: images, folderUrl: folderUrl }));
 }
 
 /**
- * Reads tabbed logs from compact A:N layout (Bloom A:D, Notes F:G, Repot I:J, Water L:N)
+ * =============================================================================
+ * SECTION 5: OPERATIONAL CHRONICLES (READ, LOG, EDIT, DELETE & BULK OPS)
+ * =============================================================================
+ */
+
+/**
+ * Reads tabbed logs strictly starting at Row 20 from compact A:N layout:
+ * Bloom Log (Cols A:D), Notes (Cols F:G), Repotting Log (Cols I:J), Watering Log (Cols L:N).
  */
 function getOrchidIdSheetLogs(id) {
   try {
     const ss = getWebAppSpreadsheet_();
     const sheet = ss.getSheetByName(String(id).trim());
-    if (!sheet || sheet.getLastRow() < 19) {
+    if (!sheet || sheet.getLastRow() < 20) {
       return { notes: [], watering: [], repotting: [], bloom: [] };
     }
 
@@ -435,23 +527,27 @@ function getOrchidIdSheetLogs(id) {
       return parsed ? Utilities.formatDate(parsed, tz, 'yyyy-MM-dd') : String(val).trim();
     };
 
-    const lastCol = sheet.getLastColumn();
-    const numDataRows = sheet.getLastRow() - 18;
-    const fullGrid = sheet.getRange(19, 1, numDataRows, lastCol).getValues();
+    const lastCol = Math.max(sheet.getLastColumn(), 14);
+    const numDataRows = sheet.getLastRow() - 19;
+    const fullGrid = sheet.getRange(20, 1, numDataRows, lastCol).getValues();
     const logs = { notes: [], watering: [], repotting: [], bloom: [] };
+
+    const colBloom = 1;  // Col A
+    const colNotes = 6;  // Col F
+    const colRepot = 9;  // Col I
+    const colWater = 12; // Col L
 
     for (let r = 0; r < fullGrid.length; r++) {
       const row = fullGrid[r];
-      const sheetRowIndex = 19 + r;
+      const sheetRowIndex = 20 + r;
 
-      // Bloom Log (Col A = 1)
-      const bDate = row[0];
-      const bDateStr = String(bDate || '').trim().toLowerCase();
-      if (bDate && bDateStr !== '' && bDateStr !== 'in bloom' && bDateStr !== 'date' && bDateStr !== 'bloom log' && bDateStr !== 'start date') {
+      // 1. Bloom Log (Cols A:D)
+      const bDate = row[colBloom - 1];
+      if (bDate && String(bDate).trim() !== '') {
         const startDate = parseWebAppDate_(bDate);
-        const endDateVal = row[1];
+        const endDateVal = row[colBloom];
         const endDate = parseWebAppDate_(endDateVal);
-        let durStr = row[2] ? String(row[2]).trim() : '';
+        let durStr = row[colBloom + 1] ? String(row[colBloom + 1]).trim() : '';
 
         if ((!durStr || durStr === '—') && startDate) {
           durStr = formatWebAppDuration_(startDate, endDate || new Date());
@@ -459,58 +555,58 @@ function getOrchidIdSheetLogs(id) {
 
         logs.bloom.push({
           rowIndex: sheetRowIndex,
-          colIndex: 1,
+          colIndex: colBloom,
           inBloom: formatDate(bDate),
           outBloom: formatDate(endDateVal),
           duration: durStr || '—',
-          notes: row[3] ? String(row[3]).trim() : ''
+          notes: row[colBloom + 2] ? String(row[colBloom + 2]).trim() : ''
         });
       }
 
-      // Notes (Col F = 6)
-      const nDate = row[5];
-      const nDateStr = String(nDate || '').trim().toLowerCase();
-      if (nDate && nDateStr !== '' && nDateStr !== 'date') {
+      // 2. Notes / Observances (Cols F:G)
+      const nDate = row[colNotes - 1];
+      if (nDate && String(nDate).trim() !== '') {
         logs.notes.push({
           rowIndex: sheetRowIndex,
-          colIndex: 6,
+          colIndex: colNotes,
           date: formatDate(nDate),
-          notes: row[6] ? String(row[6]).trim() : ''
+          notes: row[colNotes] ? String(row[colNotes]).trim() : ''
         });
       }
 
-      // Repotting Log (Col I = 9)
-      const repDate = row[8];
-      const repDateStr = String(repDate || '').trim().toLowerCase();
-      if (repDate && repDateStr !== '' && repDateStr !== 'date') {
+      // 3. Repotting Log (Cols I:J)
+      const repDate = row[colRepot - 1];
+      if (repDate && String(repDate).trim() !== '') {
         logs.repotting.push({
           rowIndex: sheetRowIndex,
-          colIndex: 9,
+          colIndex: colRepot,
           date: formatDate(repDate),
-          notes: row[9] ? String(row[9]).trim() : ''
+          notes: row[colRepot] ? String(row[colRepot]).trim() : ''
         });
       }
 
-      // Watering Log (Col L = 12)
-      const wDate = row[11];
-      const wDateStr = String(wDate || '').trim().toLowerCase();
-      if (wDate && wDateStr !== '' && wDateStr !== 'date') {
+      // 4. Watering Log (Cols L:N)
+      const wDate = row[colWater - 1];
+      if (wDate && String(wDate).trim() !== '') {
         logs.watering.push({
           rowIndex: sheetRowIndex,
-          colIndex: 12,
+          colIndex: colWater,
           date: formatDate(wDate),
-          method: row[12] ? String(row[12]).trim() : 'Soak',
-          notes: row[13] ? String(row[13]).trim() : ''
+          method: row[colWater] ? String(row[colWater]).trim() : 'Soak',
+          notes: row[colWater + 1] ? String(row[colWater + 1]).trim() : ''
         });
       }
     }
 
-    return logs;
+    return JSON.parse(JSON.stringify(logs));
   } catch (err) {
-    return { notes: [], watering: [], repotting: [], bloom: [], error: err.message };
+    return { notes: [], watering: [], repotting: [], bloom: [], error: String(err.message) };
   }
 }
 
+/**
+ * Updates an existing chronicle log row in place on the specimen's ID tab.
+ */
 function updateIdSheetLogEntry(id, logType, rowIndex, colIndex, payload) {
   try {
     const ss = getWebAppSpreadsheet_();
@@ -548,6 +644,9 @@ function updateIdSheetLogEntry(id, logType, rowIndex, colIndex, payload) {
   }
 }
 
+/**
+ * Removes a chronicle log entry and shifts remaining section cells up.
+ */
 function deleteIdSheetLogEntry(id, logType, rowIndex, colIndex) {
   try {
     const ss = getWebAppSpreadsheet_();
@@ -562,6 +661,10 @@ function deleteIdSheetLogEntry(id, logType, rowIndex, colIndex) {
   }
 }
 
+/**
+ * Appends a new care entry starting at Row 20 in the exact section columns
+ * (Notes F:G, Repotting I:J, Watering L:N).
+ */
 function logCareToIdSheet(id, actionType, methodOrMedia, noteText) {
   try {
     const ss = getWebAppSpreadsheet_();
@@ -575,11 +678,13 @@ function logCareToIdSheet(id, actionType, methodOrMedia, noteText) {
     else if (actionType === 'Repotting') targetCol = 9;// Col I
 
     let targetRow = 20;
-    const checkRows = Math.max(sheet.getLastRow() - 19, 1);
-    const colValues = sheet.getRange(20, targetCol, checkRows, 1).getValues();
-    for (let i = 0; i < colValues.length; i++) {
-      if (String(colValues[i][0] || '').trim() !== '') {
-        targetRow = 20 + i + 1;
+    const lastRow = sheet.getLastRow();
+    if (lastRow >= 20) {
+      const colValues = sheet.getRange(20, targetCol, lastRow - 19, 1).getValues();
+      for (let i = 0; i < colValues.length; i++) {
+        if (String(colValues[i][0] || '').trim() !== '') {
+          targetRow = 20 + i + 1;
+        }
       }
     }
 
@@ -598,43 +703,16 @@ function logCareToIdSheet(id, actionType, methodOrMedia, noteText) {
   }
 }
 
-function updateOrchidRecord(updatedRecord) {
-  try {
-    const ss = getWebAppSpreadsheet_();
-    const sheet = ss.getSheetByName(INVENTORY_SHEET) || ss.getSheets()[0];
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0].map(h => String(h).trim());
-    const idColIdx = headers.indexOf('ID');
-    const targetId = String(updatedRecord['ID']).trim();
-    let targetRowIndex = -1;
-
-    for (let i = 1; i < data.length; i++) {
-      if (String(data[i][idColIdx]).trim() === targetId) {
-        targetRowIndex = i + 1;
-        break;
-      }
-    }
-    if (targetRowIndex === -1) throw new Error(`Specimen ID #${targetId} not found.`);
-
-    headers.forEach((header, colIdx) => {
-      if (updatedRecord.hasOwnProperty(header)) {
-        sheet.getRange(targetRowIndex, colIdx + 1).setValue(updatedRecord[header]);
-      }
-    });
-
-    if (updatedRecord['Orchid Name'] && typeof ensureSpecimenDrivePhotoFolder_ === 'function') {
-      ensureSpecimenDrivePhotoFolder_(targetId, updatedRecord['Orchid Name'], ss.getSheetByName(targetId));
-    }
-
-    return { success: true, message: `Specimen #${targetId} updated successfully.` };
-  } catch (err) {
-    throw new Error('Update failed: ' + err.message);
-  }
-}
-
+/**
+ * Executes bulk watering (appending to Cols L:N starting at Row 20 on each
+ * selected ID sheet) or bulk field updates on the master Inventory sheet.
+ */
 function executeBatchAction(specimenIds, actionType, extraFields) {
   try {
     const ss = getWebAppSpreadsheet_();
+    const tz = ss.getSpreadsheetTimeZone();
+    const todayLong = Utilities.formatDate(new Date(), tz, 'MMMM d, yyyy');
+
     const sheet = ss.getSheetByName(INVENTORY_SHEET) || ss.getSheets()[0];
     const data = sheet.getDataRange().getValues();
     const headers = data[0].map(h => String(h).trim());
@@ -647,7 +725,28 @@ function executeBatchAction(specimenIds, actionType, extraFields) {
       const currentId = String(data[i][idColIdx]).trim();
       if (idSet.has(currentId)) {
         const rowNumber = i + 1;
-        if (extraFields && typeof extraFields === 'object') {
+
+        if (actionType === 'Watering') {
+          const idSheet = ss.getSheetByName(currentId);
+          if (idSheet) {
+            const targetCol = 12; // Col L (Watering Log Date)
+            let targetRow = 20;
+            const lastRow = idSheet.getLastRow();
+            if (lastRow >= 20) {
+              const colValues = idSheet.getRange(20, targetCol, lastRow - 19, 1).getValues();
+              for (let r = 0; r < colValues.length; r++) {
+                if (String(colValues[r][0] || '').trim() !== '') {
+                  targetRow = 20 + r + 1;
+                }
+              }
+            }
+
+            const methodVal = (extraFields && extraFields.method) ? extraFields.method : 'Soak';
+            const notesVal = (extraFields && extraFields.notes) ? extraFields.notes : '';
+            idSheet.getRange(targetRow, targetCol, 1, 3).setValues([[todayLong, methodVal, notesVal]]);
+            idSheet.getRange(targetRow, targetCol).setNumberFormat('MMMM d, yyyy');
+          }
+        } else if (extraFields && typeof extraFields === 'object') {
           headers.forEach((header, colIdx) => {
             if (extraFields.hasOwnProperty(header)) {
               sheet.getRange(rowNumber, colIdx + 1).setValue(extraFields[header]);
@@ -658,7 +757,7 @@ function executeBatchAction(specimenIds, actionType, extraFields) {
       }
     }
 
-    return { success: true, updatedCount: updatedCount, message: `Applied ${actionType} to ${updatedCount} specimens.` };
+    return { success: true, updatedCount: updatedCount, message: `Successfully logged ${actionType} for ${updatedCount} specimens.` };
   } catch (err) {
     throw new Error('Batch operation failed: ' + err.message);
   }
